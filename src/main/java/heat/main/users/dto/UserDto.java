@@ -1,5 +1,6 @@
 package heat.main.users.dto;
 
+import heat.main.enums.RoleType;
 import lombok.*;
 
 import javax.validation.constraints.Positive;
@@ -13,11 +14,11 @@ public class UserDto {
 
     @NotNull
     @Positive
-    private Integer id;
+    private Long id;
 
     private String name;
 
-    private String phone;
+    private String phoneNumber;
 
     private char gender;
 
@@ -28,4 +29,7 @@ public class UserDto {
     private double weight;
 
     private double bmi;
+
+    private RoleType roleType;
+
 }

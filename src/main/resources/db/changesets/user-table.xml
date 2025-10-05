@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="
+                     http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.28.xsd">
+
+    <changeSet id="001-create-user-table" author="opir485">
+        <createTable tableName="core_user">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="phone_number" type="varchar(20)"/>
+            <column name="email" type="varchar(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="gender" type="char(1)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="height" type="numeric">
+                <constraints nullable="false"/>
+            </column>
+            <column name="weight" type="numeric">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bmi" type="numeric">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="core_user" indexName="idx_core_user_email">
+            <column name="email"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="addChecks" author="opir485">
+        <sql><![CDATA[
+            ALTER TABLE core_user ADD CONSTRAINT chk_height_positive CHECK (height > 0 AND height < 300);
+            ALTER TABLE core_user ADD CONSTRAINT chk_weight_positive CHECK (weight > 0 AND weight < 500);
+            ALTER TABLE core_user ADD CONSTRAINT chk_gender_valid CHECK (gender IN ('M','F'));
+            ALTER TABLE core_user ADD CONSTRAINT chk_role_valid CHECK (role IN ('ADMIN','PATIENT','SUPPORT'));
+        ]]></sql>
+    </changeSet>
+
+</databaseChangeLog>
