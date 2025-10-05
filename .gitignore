@@ -11,6 +11,7 @@ target/
 *.iws
 *.iml
 *.ipr
+.idea/
 
 ### Eclipse ###
 .apt_generated
@@ -36,3 +37,31 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Logs ###
+*.log
+logs/
+
+### Java artifacts ###
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+### Local environment/config ###
+.env
+.env.*
+*.env
+
+# Ignore Spring profile-specific app configs but keep base application.yml
+src/main/resources/application-*.yml
+!src/main/resources/application.yml
+
+### Database/Tools ###
+*.db
+*.sqlite
+
+### Misc ###
+*.swp
+*.swo
