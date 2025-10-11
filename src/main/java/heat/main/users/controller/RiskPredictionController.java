@@ -2,10 +2,12 @@ package heat.main.users.controller;
 
 import heat.main.users.service.RiskPredictionService;
 import heat.main.users.dto.CreateRiskPredictionRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/predictions")

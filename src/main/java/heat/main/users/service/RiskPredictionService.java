@@ -22,21 +22,21 @@ public class RiskPredictionService {
 
     @Transactional
     public Long create(CreateRiskPredictionRequest req) {
-        User patientRef = em.getReference(User.class, req.patientId());
+        User patientRef = em.getReference(User.class, req.getPatientId());
 
         RiskPrediction entity = RiskPrediction.builder()
-                .patient(patientRef)    // хз че здесь надо было поставить если честно, user попробовал, но все равно не помогло
-                .temperature(req.temperature())
-                .humidity(req.humidity())
-                .pulse(req.pulse())
-                .dehydrationLevel(req.dehydrationLevel())
-                .heatIndex(req.heatIndex())
-                .bmi(req.bmi())
-                .predictedProbability(req.predictedProbability())
-                .predictedRiskLevel(req.predictedRiskLevel())
-                .modelVersion(req.modelVersion())
+                .id(patientRef.getId())    // хз че здесь надо было поставить если честно, user попробовал, но все равно не помогло
+                .temperature(req.getTemperature())
+                .humidity(req.getHumidity())
+                .pulse(req.getPulse())
+                .dehydrationLevel(req.getDehydrationLevel())
+                .heatIndex(req.getHeatIndex())
+                .bmi(req.getBmi())
+                .predictedProbability(req.getPredictedProbability())
+                .predictedRiskLevel(req.getPredictedRiskLevel())
+                .modelVersion(req.getModelVersion())
                 .assessmentTimestamp(LocalDateTime.now())
-                .notes(req.notes())
+                .notes(req.getNotes())
                 .build();
 
         return predictionRepo.save(entity).getId();
