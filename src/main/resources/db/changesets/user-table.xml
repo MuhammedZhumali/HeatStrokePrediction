@@ -6,6 +6,11 @@
                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.28.xsd">
 
     <changeSet id="001-create-user-table" author="opir485">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="core_user"/>
+            </not>
+        </preConditions>
         <createTable tableName="core_user">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -40,6 +45,11 @@
     </changeSet>
 
     <changeSet id="addChecks" author="opir485">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="core_user"/>
+            </not>
+        </preConditions>
         <sql><![CDATA[
             ALTER TABLE core_user ADD CONSTRAINT chk_height_positive CHECK (height > 0 AND height < 300);
             ALTER TABLE core_user ADD CONSTRAINT chk_weight_positive CHECK (weight > 0 AND weight < 500);

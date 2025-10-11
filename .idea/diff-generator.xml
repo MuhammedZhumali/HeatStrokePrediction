@@ -2,6 +2,6 @@
 <project version="4">
   <component name="DiffGenerationConfig">
     <option name="updateChangeLogPath" value="src/main/resources/db/db.changelog-master.xml" />
-    <option name="updateDbConnectionName" value="6ba004fe-3ad1-422b-a353-5d244eed9cac" />
+    <option name="updateDbConnectionName" value="92b5b241-81d1-4af4-801b-53b11b7c5041" />
   </component>
 </project>

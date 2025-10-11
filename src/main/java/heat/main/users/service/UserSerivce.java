@@ -15,5 +15,12 @@ public interface UserSerivce {
     Optional<User> findUserById(Long id);
 
     List<User> findUserByPhoneAndRole(String phone, RoleType roleType);
+
+    User addUser(User user);
+
+    User updateUser(Long id, User user);
+
+    void deleteUser(Long id);
+
 }
 
