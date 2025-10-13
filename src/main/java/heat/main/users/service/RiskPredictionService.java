@@ -3,9 +3,9 @@ package heat.main.users.service;
 import heat.main.domain.RiskPrediction;
 import heat.main.domain.User;
 import heat.main.enums.RiskLevel;
+import heat.main.users.dto.CreateRiskPredictionRequestDto;
 import heat.main.users.repository.RiskPredictionRepository;
 import heat.main.users.repository.UserRepository;
-import heat.main.users.dto.CreateRiskPredictionRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -18,25 +18,24 @@ import java.time.LocalDateTime;
 public class RiskPredictionService {
 
     private final RiskPredictionRepository predictionRepo;
-    private final EntityManager em;
+    private final UserRepository userRepository;
 
     @Transactional
-    public Long create(CreateRiskPredictionRequest req) {
-        User patientRef = em.getReference(User.class, req.getPatientId());
+    public Long create(CreateRiskPredictionRequestDto req) {
+        User patientRef = userRepository.findById(req.getPatientId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + req.getPatientId()));
 
         RiskPrediction entity = RiskPrediction.builder()
-                .id(patientRef.getId())    // хз че здесь надо было поставить если честно, user попробовал, но все равно не помогло
+                .user(patientRef)    // хз че здесь надо было поставить если честно, user попробовал, но все равно не помогло
                 .temperature(req.getTemperature())
                 .humidity(req.getHumidity())
                 .pulse(req.getPulse())
                 .dehydrationLevel(req.getDehydrationLevel())
                 .heatIndex(req.getHeatIndex())
                 .bmi(req.getBmi())
-                .predictedProbability(req.getPredictedProbability())
                 .predictedRiskLevel(req.getPredictedRiskLevel())
-                .modelVersion(req.getModelVersion())
+                .predictedProbability(req.getPredictedProbability())
                 .assessmentTimestamp(LocalDateTime.now())
-                .notes(req.getNotes())
                 .build();
 
         return predictionRepo.save(entity).getId();
