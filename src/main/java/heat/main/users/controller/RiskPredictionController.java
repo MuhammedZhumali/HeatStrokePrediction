@@ -1,11 +1,14 @@
 package heat.main.users.controller;
 
+import heat.main.users.dto.CreateRiskPredictionRequestDto;
+import heat.main.users.dto.PredictionCreatedResponseDto;
 import heat.main.users.service.RiskPredictionService;
-import heat.main.users.dto.CreateRiskPredictionRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.*;
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/predictions")
@@ -14,25 +17,9 @@ public class RiskPredictionController {
 
     private final RiskPredictionService service;
 
-    @PostMapping
-    public ResponseEntity<Long> create(@RequestBody @Valid CreateRiskPredictionRequest req) {
-        Long id = service.create(req);
-        return ResponseEntity.ok(id);
+    @PostMapping("/add")
+    public ResponseEntity<PredictionCreatedResponseDto> create(@RequestBody @Valid CreateRiskPredictionRequestDto req) {
+        PredictionCreatedResponseDto resp = service.create(req);
+        return ResponseEntity.created(URI.create("/api/predictions/" + resp.getId())).body(resp);
     }
 }
-
-/* json example
-{
-  "patientId": 1,
-  "temperature": 38.2,
-  "humidity": 0.65,
-  "pulse": 92,
-  "dehydrationLevel": 0.3,
-  "heatIndex": 41.5,
-  "bmi": 26.8,
-  "predictedProbability": 0.82,
-  "predictedRiskLevel": "HIGH",
-  "modelVersion": "v1.0.0",
-  "notes": "wearable batch #2025-10-09"
-}
- */

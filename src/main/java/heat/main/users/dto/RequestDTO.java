@@ -1,13 +1,15 @@
+/*
 package heat.main.users.dto;
 
 
 import heat.main.enums.RiskLevel;
 import jakarta.validation.constraints.*;
+import org.springframework.data.annotation.Id;
 
 import java.math.BigDecimal;
 
-public record CreateRiskPredictionRequest(
-        @NotNull Long patientId,             // ID пациента (User.id)
+public class CreateRiskPredictionRequest(
+        @Id Long patientId,             // ID пациента (User.id)
 
         // --- примеры входных признаков (оставь только свои реально используемые) ---
         @NotNull BigDecimal temperature,
@@ -26,4 +28,8 @@ public record CreateRiskPredictionRequest(
         // --- метаданные ---
         String modelVersion,
         String notes
-) { }
+) {
+        public Object getTemperature() {
+        }
+}
+*/
