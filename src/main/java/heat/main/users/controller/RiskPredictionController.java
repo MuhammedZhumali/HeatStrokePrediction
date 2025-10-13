@@ -1,7 +1,7 @@
 package heat.main.users.controller;
 
+import heat.main.users.dto.CreateRiskPredictionRequestDto;
 import heat.main.users.service.RiskPredictionService;
-import heat.main.users.dto.CreateRiskPredictionRequest;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,7 @@ public class RiskPredictionController {
     private final RiskPredictionService service;
 
     @PostMapping
-    public ResponseEntity<Long> create(@RequestBody @Valid CreateRiskPredictionRequest req) {
+    public ResponseEntity<Long> create(@RequestBody @Valid CreateRiskPredictionRequestDto req) {
         Long id = service.create(req);
         return ResponseEntity.ok(id);
     }
