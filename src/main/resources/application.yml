@@ -11,3 +11,8 @@ spring:
   jpa:
       properties:
         hibernate.default_schema: heatstr
+  security:
+    user:
+      name: admin
+      password: admin
+      roles: ADMIN
