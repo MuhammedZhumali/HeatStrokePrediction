@@ -1,4 +1,4 @@
-package heat.main.users.dto;
+package heat.main.prediction.dto;
 
 import heat.main.enums.RiskLevel;
 import lombok.*;
@@ -25,7 +25,6 @@ public class CreateRiskPredictionRequestDto {
     @NotNull private BigDecimal pulse;
     private BigDecimal dehydrationLevel;
     private BigDecimal heatIndex;
-    private BigDecimal bmi;
 
     // выход модели
     @NotNull
@@ -35,7 +34,5 @@ public class CreateRiskPredictionRequestDto {
     @NotNull
     private RiskLevel predictedRiskLevel;
 
-    // метаданные (опционально)
-    private String modelVersion;
     private String notes;
 }

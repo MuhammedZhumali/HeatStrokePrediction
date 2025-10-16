@@ -6,5 +6,6 @@
 
     <include file="changesets/user-table.xml" relativeToChangelogFile="true"/>
     <include file="changesets/drop-bmi.xml" relativeToChangelogFile="true"/>
+    <include file="changesets/prediction-table.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
