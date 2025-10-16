@@ -6,8 +6,7 @@ import heat.main.enums.RiskLevel;
 import heat.main.users.dto.CreateRiskPredictionRequestDto;
 import heat.main.users.repository.RiskPredictionRepository;
 import heat.main.users.repository.UserRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
+import javax.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +25,7 @@ public class RiskPredictionService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + req.getPatientId()));
 
         RiskPrediction entity = RiskPrediction.builder()
-                .user(patientRef)    // хз че здесь надо было поставить если честно, user попробовал, но все равно не помогло
+                .user(patientRef)
                 .temperature(req.getTemperature())
                 .humidity(req.getHumidity())
                 .pulse(req.getPulse())

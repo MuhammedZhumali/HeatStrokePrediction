@@ -1,7 +1,7 @@
 package heat.main.domain;
 
 import heat.main.enums.RoleType;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
