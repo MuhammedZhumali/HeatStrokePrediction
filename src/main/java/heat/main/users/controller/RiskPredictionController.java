@@ -1,9 +1,10 @@
 package heat.main.users.controller;
 
 import heat.main.users.dto.CreateRiskPredictionRequestDto;
+import heat.main.users.dto.RiskPredictionViewDto;
 import heat.main.users.service.RiskPredictionService;
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,25 +17,29 @@ public class RiskPredictionController {
 
     private final RiskPredictionService service;
 
+    /** POST /api/predictions — создать новое предсказание */
     @PostMapping
-    public ResponseEntity<Long> create(@RequestBody @Valid CreateRiskPredictionRequestDto req) {
+    public ResponseEntity<Long> create(@Valid @RequestBody CreateRiskPredictionRequestDto req) {
         Long id = service.create(req);
         return ResponseEntity.ok(id);
     }
-}
 
-/* json example
-{
-  "patientId": 1,
-  "temperature": 38.2,
-  "humidity": 0.65,
-  "pulse": 92,
-  "dehydrationLevel": 0.3,
-  "heatIndex": 41.5,
-  "bmi": 26.8,
-  "predictedProbability": 0.82,
-  "predictedRiskLevel": "HIGH",
-  "modelVersion": "v1.0.0",
-  "notes": "wearable batch #2025-10-09"
+    /** GET /api/predictions/user/{userId} — список предсказаний пользователя (пагинация) */
+    @GetMapping("/user/{userId}")
+    public Page<RiskPredictionViewDto> listByUser(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return service.getUserPredictions(userId, page, size);
+    }
+
+    /** GET /api/predictions/{predictionId}/user/{userId} — одно предсказание пользователя */
+    @GetMapping("/{predictionId}/user/{userId}")
+    public RiskPredictionViewDto getOne(
+            @PathVariable Long userId,
+            @PathVariable Long predictionId
+    ) {
+        return service.getUserPredictionById(userId, predictionId);
+    }
 }
- */

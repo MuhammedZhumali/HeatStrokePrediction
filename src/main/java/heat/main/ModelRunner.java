@@ -7,10 +7,10 @@ import org.jpmml.evaluator.OutputField;
 import org.jpmml.model.PMMLException;
 import org.xml.sax.SAXException;
 
+import jakarta.xml.bind.JAXBException;                // ← единственный нужный импорт
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 
 public class ModelRunner {
 
@@ -31,21 +31,16 @@ public class ModelRunner {
             evaluator.verify();
 
             // Входные поля
-            List<InputField> inputFields = evaluator.getInputFields();
-            for (InputField f : inputFields) {
-                System.out.println("Input Field: " + f.getName()
-                        + " | Type: " + f.getDataType());
+            for (InputField f : evaluator.getInputFields()) {
+                System.out.println("Input Field: " + f.getName() + " | Type: " + f.getDataType());
             }
 
             // Выходные поля
-            List<OutputField> outputFields = evaluator.getOutputFields();
-            for (OutputField f : outputFields) {
-                System.out.println("Output Field: " + f.getName()
-                        + " | Type: " + f.getDataType());
+            for (OutputField f : evaluator.getOutputFields()) {
+                System.out.println("Output Field: " + f.getName() + " | Type: " + f.getDataType());
             }
 
-        } catch (ParserConfigurationException | SAXException
-                 | PMMLException | IOException e) {
+        } catch (ParserConfigurationException | SAXException | PMMLException | IOException | JAXBException e) {
             e.printStackTrace();
             throw new IllegalStateException("Failed to load/verify PMML model", e);
         }
