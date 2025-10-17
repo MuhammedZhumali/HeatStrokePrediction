@@ -1,10 +1,11 @@
 package heat.main.domain;
 
 import heat.main.enums.RoleType;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.Formula;
-
+import javax.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
@@ -37,7 +38,7 @@ public class User {
     @Column(name = "weight")
     private BigDecimal weight;
 
-    @Formula("weight / (height * height) * 10000")
+    @Column(name = "bmi")
     private BigDecimal bmi;
 
     @Enumerated(EnumType.STRING)

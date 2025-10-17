@@ -1,13 +1,13 @@
 package heat.main.domain;
 
 import heat.main.enums.RiskLevel;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import jakarta.persistence.Id;
+import javax.persistence.Id;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 @Entity
