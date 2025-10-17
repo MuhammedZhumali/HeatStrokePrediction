@@ -34,6 +34,12 @@
             <version>1.7.4</version>
         </dependency>
 
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+
         <!-- JAXB Runtime for XML binding -->
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
