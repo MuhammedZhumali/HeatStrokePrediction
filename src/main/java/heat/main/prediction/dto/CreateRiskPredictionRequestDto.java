@@ -9,8 +9,7 @@ import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateRiskPredictionRequestDto {
