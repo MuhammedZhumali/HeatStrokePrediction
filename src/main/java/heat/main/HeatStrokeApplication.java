@@ -7,6 +7,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class HeatStrokeApplication {
     public static void main(String[] args) {
         SpringApplication.run(HeatStrokeApplication.class, args);
+
+        System.out.println("*****************************************************************************");
+        System.out.println("*****************************************************************************");
+        System.out.println("App started");
     }
 }
 

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="
+                     http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.28.xsd">
+
+    <changeSet id="003-create-prediction-table" author="opir485">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="core_prediction"/>
+            </not>
+        </preConditions>
+        <createTable tableName="core_prediction">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="patient_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_prediction_patient"
+                             referencedTableName="core_user" referencedColumnNames="id"/>
+            </column>
+            <column name="temperature" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="humidity" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pulse" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dehydration_level" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="predicted_probability" type="DECIMAL(6,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="predicted_risk_level" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="assessment_timestamp" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="notes" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="core_prediction" indexName="idx_core_prediction_patient">
+            <column name="patient_id"/>
+        </createIndex>
+        <createIndex tableName="core_prediction" indexName="idx_prediction_patient">
+            <column name="patient_id"/>
+        </createIndex>
+        <createIndex tableName="core_prediction" indexName="idx_prediction_timestamp">
+            <column name="assessment_timestamp"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="004-add-heat-index-column" author="opir485">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="core_prediction"/>
+            <not>
+                <columnExists tableName="core_prediction" columnName="heat_index"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="core_prediction">
+            <column name="heat_index" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+    </changeSet>
+
+</databaseChangeLog>
