@@ -1,4 +1,4 @@
-package heat.main.users.dto;
+package heat.main.prediction.dto;
 
 import heat.main.enums.RiskLevel;
 import lombok.AllArgsConstructor;
@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/** Возврат для GET: и вводные, и результат модели. */
-@Data                   // включает getter/setter/toString/equals/hashCode
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
