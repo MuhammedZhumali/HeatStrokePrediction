@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: heatstroke-postgres
+    environment:
+      POSTGRES_DB: heatstr
+      POSTGRES_USER: heatstr
+      POSTGRES_PASSWORD: heatstr
+    ports:
+      # снаружи совпадает с твоей локальной настройкой 5433
+      - "5433:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      # создадим схему heatstr на старте (см. файл ниже)
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heatstr -d heatstr"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: heatstroke-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # --- Spring Datasource (app внутри сети общается с хостом 'db')
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/heatstr
+      SPRING_DATASOURCE_USERNAME: heatstr
+      SPRING_DATASOURCE_PASSWORD: heatstr
+
+      # --- Liquibase: включим, но файлов проекта не трогаем
+      SPRING_LIQUIBASE_ENABLED: "true"
+      SPRING_LIQUIBASE_CHANGE_LOG: classpath:db/db.changelog-master.xml
+      SPRING_LIQUIBASE_DEFAULT_SCHEMA: heatstr
+
+      # --- Hibernate default schema (как в application.yml)
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: heatstr
+
+      # (опционально) строгая валидация вместо автосоздания таблиц
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  dbdata:
