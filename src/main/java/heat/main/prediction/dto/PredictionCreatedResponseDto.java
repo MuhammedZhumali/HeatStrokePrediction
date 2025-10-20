@@ -18,4 +18,5 @@ public class PredictionCreatedResponseDto {
     private BigDecimal predictedProbability;
     private RiskLevel predictedRiskLevel;
     private LocalDateTime assessmentTimestamp;
+    private String notes;
 }
