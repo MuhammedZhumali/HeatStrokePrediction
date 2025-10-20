@@ -1,0 +1,43 @@
+﻿services:
+  db:
+    image: postgres:15-alpine
+    container_name: heatstroke-postgres
+    environment:
+      POSTGRES_DB: heatstr
+      POSTGRES_USER: heatstr
+      POSTGRES_PASSWORD: heatstr
+    ports:
+      - "5433:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heatstr -d heatstr"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: heatstroke-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/heatstr
+      SPRING_DATASOURCE_USERNAME: heatstr
+      SPRING_DATASOURCE_PASSWORD: heatstr
+      SPRING_LIQUIBASE_ENABLED: "true"
+      SPRING_LIQUIBASE_DEFAULT_SCHEMA: heatstr
+      SPRING_LIQUIBASE_CHANGE_LOG: classpath:db/db.changelog-master.xml
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: heatstr
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  dbdata:
