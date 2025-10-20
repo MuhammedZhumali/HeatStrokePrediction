@@ -2,83 +2,99 @@ package heat.main.prediction.service;
 
 import heat.main.domain.RiskPrediction;
 import heat.main.domain.User;
-import heat.main.prediction.dto.CreateRiskPredictionRequestDto;
-import heat.main.prediction.dto.PredictionCreatedResponseDto;
-import heat.main.prediction.dto.RiskPredictionViewDto;
+import heat.main.enums.RiskLevel;
 import heat.main.prediction.repository.RiskPredictionRepository;
+import heat.main.prediction.dto.CreateRiskPredictionRequestDto;
+import heat.main.prediction.dto.RiskPredictionViewDto;
 import heat.main.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityNotFoundException;
+import javax.transaction.Transactional;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class RiskPredictionService {
 
-    private final RiskPredictionRepository predictionRepo;
+    private final RiskPredictionRepository predictionRepository;
     private final UserRepository userRepository;
 
-    public PredictionCreatedResponseDto create(CreateRiskPredictionRequestDto req) {
-        // Get patient reference
-        User patientRef = userRepository.getReferenceById(req.getPatientId());
+    @Transactional
+    public Long create(CreateRiskPredictionRequestDto req) {
+        User user = userRepository.findById(req.getPatientId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + req.getPatientId()));
 
-        // Build and save entity
+        LocalDateTime assessedAt = LocalDateTime.now();
+
+        BigDecimal bmi = req.getBmi() != null ? req.getBmi() : user.getBmi();
+        BigDecimal heatIndex = req.getHeatIndex();
+
         RiskPrediction entity = RiskPrediction.builder()
-                .user(patientRef)
+                .user(user)
+
+                // входные параметры
                 .temperature(req.getTemperature())
                 .humidity(req.getHumidity())
                 .pulse(req.getPulse())
                 .dehydrationLevel(req.getDehydrationLevel())
-                .heatIndex(req.getHeatIndex())
-                .predictedRiskLevel(req.getPredictedRiskLevel())
+                .heatIndex(heatIndex)
+                .bmi(bmi)
+
+                // выход модели
                 .predictedProbability(req.getPredictedProbability())
-                .assessmentTimestamp(LocalDateTime.now())
+                .predictedRiskLevel(req.getPredictedRiskLevel() != null ? req.getPredictedRiskLevel() : RiskLevel.LOW)
+
+                // метаданные
+                .assessmentTimestamp(assessedAt)
                 .notes(req.getNotes())
                 .build();
 
-        RiskPrediction savedPrediction = predictionRepo.save(entity);
-
-        return new PredictionCreatedResponseDto(
-                savedPrediction.getId(),
-                savedPrediction.getUser().getId(),
-                savedPrediction.getUser().getName(),
-                savedPrediction.getPredictedProbability(),
-                savedPrediction.getPredictedRiskLevel(),
-                savedPrediction.getAssessmentTimestamp(),
-                savedPrediction.getNotes()
-        );
+        RiskPrediction saved = predictionRepository.save(entity);
+        return saved.getId();
     }
 
+    @Transactional
     public Page<RiskPredictionViewDto> getUserPredictions(Long userId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<RiskPrediction> entities = predictionRepo.findAllByUser_IdOrderByAssessmentTimestampDesc(userId, pageable);
-        return entities.map(this::toViewDto);
+        Page<RiskPrediction> predictions = predictionRepository
+                .findAllByUser_IdOrderByAssessmentTimestampDesc(userId, PageRequest.of(page, size));
+
+        return predictions.map(this::toViewDto);
     }
 
+    @Transactional
     public RiskPredictionViewDto getUserPredictionById(Long userId, Long predictionId) {
-        RiskPrediction entity = predictionRepo.findByIdAndUser_Id(predictionId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Prediction not found for user"));
-        return toViewDto(entity);
+        RiskPrediction e = predictionRepository.findByIdAndUser_Id(predictionId, userId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Prediction not found by id=" + predictionId + " for userId=" + userId));
+
+        return toViewDto(e);
     }
 
-    private RiskPredictionViewDto toViewDto(RiskPrediction entity) {
+    private RiskPredictionViewDto toViewDto(RiskPrediction e) {
         return RiskPredictionViewDto.builder()
-                .id(entity.getId())
-                .userId(entity.getUser().getId())
-                .temperature(entity.getTemperature())
-                .humidity(entity.getHumidity())
-                .pulse(entity.getPulse())
-                .dehydrationLevel(entity.getDehydrationLevel())
-                .heatIndex(entity.getHeatIndex())
-                .predictedProbability(entity.getPredictedProbability())
-                .predictedRiskLevel(entity.getPredictedRiskLevel())
-                .modelVersion(null)
-                .assessmentTimestamp(entity.getAssessmentTimestamp())
-                .notes(entity.getNotes())
+                .id(e.getId())
+                .userId(e.getUser() != null ? e.getUser().getId() : null)
+
+                // входные
+                .temperature(e.getTemperature())
+                .humidity(e.getHumidity())
+                .pulse(e.getPulse())
+                .dehydrationLevel(e.getDehydrationLevel())
+                .heatIndex(e.getHeatIndex())
+                .bmi(e.getBmi())
+
+                // выход модели
+                .predictedProbability(e.getPredictedProbability())
+                .predictedRiskLevel(e.getPredictedRiskLevel())
+
+                // мета
+                .assessmentTimestamp(e.getAssessmentTimestamp())
+                .notes(e.getNotes())
                 .build();
     }
 }

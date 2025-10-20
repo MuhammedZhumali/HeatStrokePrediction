@@ -1,8 +1,10 @@
 package heat.main.prediction.dto;
 
 import heat.main.enums.RiskLevel;
-import liquibase.pro.packaged.G;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,8 +13,6 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
 public class RiskPredictionViewDto {
     private Long id;
     private Long userId;
