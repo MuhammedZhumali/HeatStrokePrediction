@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
 
   app:
-    build: .
+    build: src/main/java/heat/main
     container_name: heatstroke-app
     depends_on:
       db:
