@@ -20,6 +20,14 @@ public class RiskPredictionController {
 
     private final RiskPredictionService service;
 
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PredictionCreatedResponseDto> create(@RequestBody @Valid CreateRiskPredictionRequestDto req) {
+        PredictionCreatedResponseDto response = service.create(req);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/user/{userId}")
     public Page<RiskPredictionViewDto> listByUser(
             @PathVariable Long userId,
@@ -37,10 +45,3 @@ public class RiskPredictionController {
         return service.getUserPredictionById(userId, predictionId);
     }
 }
-
-     /*
-@PostMapping
-@PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<PredictionCreatedResponseDto> create(@RequestBody @Valid CreateRiskPredictionRequestDto req) {
-    PredictionCreatedResponseDto response = service.create(req);
-    return ResponseEntity.ok(response);*/

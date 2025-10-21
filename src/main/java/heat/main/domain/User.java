@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Formula;
 import java.math.BigDecimal;
 
 @Entity
@@ -38,7 +39,7 @@ public class User {
     @Column(name = "weight")
     private BigDecimal weight;
 
-    @Column(name = "bmi")
+    @Formula("weight / (height * height) * 10000")
     private BigDecimal bmi;
 
     @Enumerated(EnumType.STRING)
