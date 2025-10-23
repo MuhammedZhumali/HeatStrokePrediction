@@ -13,39 +13,35 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('authToken'));
+  const [loading, setLoading] = useState(false);
 
+  // Simple initialization - no token checking
   useEffect(() => {
-    const initAuth = async () => {
-      if (token) {
-        try {
-          const userData = await getCurrentUser();
-          setUser(userData);
-        } catch (error) {
-          console.error('Failed to get current user:', error);
-          localStorage.removeItem('authToken');
-          setToken(null);
-        }
-      }
-      setLoading(false);
-    };
-
-    initAuth();
-  }, [token]);
+    setLoading(false);
+  }, []);
 
   const login = async (credentials) => {
     try {
+      console.log('AuthContext: Starting login process...');
       const response = await loginUser(credentials);
-      const { token: newToken, user: userData } = response;
+      console.log('AuthContext: Login response:', response);
       
-      localStorage.setItem('authToken', newToken);
-      setToken(newToken);
+      // Use role from backend response
+      const userData = {
+        id: 1,
+        name: response.user?.username || credentials.email,
+        email: credentials.email,
+        role: response.user?.role || 'PATIENT',
+        roleType: response.user?.role || 'PATIENT'
+      };
+      
+      console.log('AuthContext: Setting user:', userData);
       setUser(userData);
       
+      console.log('AuthContext: Login successful');
       return { success: true };
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('AuthContext: Login failed:', error);
       return { 
         success: false, 
         error: error.response?.data?.message || 'Login failed' 
@@ -67,8 +63,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
-    setToken(null);
+    console.log('AuthContext: Logging out...');
     setUser(null);
   };
 
@@ -77,12 +72,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = () => {
-    return !!user && !!token;
+    return !!user;
   };
 
   const value = {
     user,
-    token,
     loading,
     login,
     register,

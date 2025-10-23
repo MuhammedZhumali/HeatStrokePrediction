@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,13 +9,23 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for adding auth tokens if needed
+// Request interceptor for authentication
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    console.log('Making request to:', config.url);
+    console.log('Full URL:', config.baseURL + config.url);
+    console.log('Request data:', config.data);
+    console.log('Request headers:', config.headers);
+    
+    // Add basic auth for admin requests
+    if (config.url?.includes('/api/predictions') && config.method === 'post') {
+      // For now, use hardcoded admin credentials
+      // In a real app, you'd get these from the logged-in user
+      const adminCredentials = btoa('Muhalek:pass123');
+      config.headers.Authorization = `Basic ${adminCredentials}`;
+      console.log('Added Basic Auth for admin request');
     }
+    
     return config;
   },
   (error) => {
@@ -27,10 +37,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
-    }
+    console.log('Response error:', error);
+    console.log('Error response:', error.response);
     return Promise.reject(error);
   }
 );
@@ -38,7 +46,7 @@ api.interceptors.response.use(
 // API endpoints
 export const createRiskPrediction = async (predictionData) => {
   try {
-    const response = await api.post('/predictions', predictionData);
+    const response = await api.post('/api/predictions', predictionData);
     return response.data;
   } catch (error) {
     console.error('Error creating risk prediction:', error);
@@ -49,7 +57,7 @@ export const createRiskPrediction = async (predictionData) => {
 export const getRecentPredictions = async () => {
   try {
     // Since backend doesn't have a /recent endpoint, we'll get the first page of predictions
-    const response = await api.get('/predictions/user/1?page=0&size=5');
+    const response = await api.get('/api/predictions/user/1?page=0&size=5');
     return {
       predictions: response.data.content || [],
       total: response.data.totalElements || 0,
@@ -65,7 +73,7 @@ export const getRecentPredictions = async () => {
 export const getPredictionHistory = async (page = 0, size = 10, search = '') => {
   try {
     // Backend expects userId in the path, using default user ID 1
-    const response = await api.get(`/predictions/user/1?page=${page}&size=${size}`);
+    const response = await api.get(`/api/predictions/user/1?page=${page}&size=${size}`);
     return {
       predictions: response.data.content || [],
       total: response.data.totalElements || 0,
@@ -81,7 +89,7 @@ export const getPredictionHistory = async (page = 0, size = 10, search = '') => 
 
 export const getPredictionById = async (userId, predictionId) => {
   try {
-    const response = await api.get(`/predictions/${predictionId}/user/${userId}`);
+    const response = await api.get(`/api/predictions/${predictionId}/user/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching prediction:', error);
@@ -100,91 +108,90 @@ export const deletePrediction = async (id) => {
   }
 };
 
-// Authentication endpoints - NOTE: Backend doesn't have auth endpoints yet
-// These are placeholder implementations for future auth implementation
+// Authentication endpoints - Connected to real backend
 export const loginUser = async (credentials) => {
   try {
-    // Check for admin credentials
-    if (credentials.email === 'admin' && credentials.password === 'admin') {
-      const adminUser = {
-        id: 1,
-        name: 'Admin',
-        email: 'admin',
-        role: 'ADMIN',
-        roleType: 'ADMIN'
-      };
-      const adminToken = 'admin-jwt-token-' + Date.now();
-      
+    // Convert frontend email field to backend username field
+    const loginData = {
+      username: credentials.email, // Backend expects username, not email
+      password: credentials.password
+    };
+    
+    console.log('Attempting login with data:', loginData);
+    console.log('API base URL:', api.defaults.baseURL);
+    
+    const response = await api.post('/auth/login', loginData);
+    
+    console.log('Login response:', response);
+    
+    if (response.status === 200) {
+      // Use role from backend response
       return {
-        token: adminToken,
-        user: adminUser
+        user: {
+          username: response.data.username,
+          email: credentials.email,
+          role: response.data.role || 'PATIENT',
+          roleType: response.data.role || 'PATIENT'
+        }
       };
     }
     
-    // For other users, simulate regular user login
-    const regularUser = {
-      id: 2,
-      name: credentials.email.split('@')[0] || credentials.email,
-      email: credentials.email,
-      role: 'PATIENT',
-      roleType: 'PATIENT'
-    };
-    const userToken = 'user-jwt-token-' + Date.now();
-    
-    return {
-      token: userToken,
-      user: regularUser
-    };
+    throw new Error('Login failed');
   } catch (error) {
     console.error('Error logging in:', error);
+    console.error('Error details:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      config: error.config
+    });
     throw error;
   }
 };
 
 export const registerUser = async (userData) => {
   try {
-    // For now, simulate registration
-    // TODO: Implement proper registration when backend auth is added
-    return {
-      id: Date.now(),
-      name: userData.name,
+    // Convert frontend data to backend format
+    const registrationData = {
+      username: userData.name,
+      password: userData.password,
       email: userData.email,
-      role: userData.role,
-      roleType: userData.role
+      gender: userData.gender || 'M',
+      height: userData.height || 170, // Default height if not provided
+      weight: userData.weight || 70   // Default weight if not provided
     };
+    
+    console.log('Attempting registration with data:', registrationData);
+    console.log('API base URL:', api.defaults.baseURL);
+    
+    const response = await api.post('/auth/sign_up', registrationData);
+    
+    console.log('Registration response:', response);
+    
+    if (response.status === 201) {
+      return {
+        id: Date.now(),
+        name: response.data.username,
+        email: userData.email,
+        role: 'PATIENT',
+        roleType: 'PATIENT'
+      };
+    }
+    
+    throw new Error('Registration failed');
   } catch (error) {
     console.error('Error registering user:', error);
+    console.error('Error details:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      config: error.config
+    });
     throw error;
   }
 };
 
-export const getCurrentUser = async () => {
-  try {
-    // Check if admin token is present
-    const token = localStorage.getItem('authToken');
-    if (token && token.startsWith('admin-jwt-token-')) {
-      return {
-        id: 1,
-        name: 'Admin',
-        email: 'admin',
-        role: 'ADMIN',
-        roleType: 'ADMIN'
-      };
-    }
-    
-    // Return regular user for other tokens
-    return {
-      id: 2,
-      name: 'User',
-      email: 'user@heatstroke.com',
-      role: 'PATIENT',
-      roleType: 'PATIENT'
-    };
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    throw error;
-  }
-};
+// Removed getCurrentUser - not needed without tokens
 
 export const logoutUser = async () => {
   try {
