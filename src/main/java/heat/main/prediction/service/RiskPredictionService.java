@@ -1,5 +1,6 @@
 package heat.main.prediction.service;
 
+import heat.main.ModelRunner;
 import heat.main.domain.RiskPrediction;
 import heat.main.domain.User;
 import heat.main.prediction.dto.CreateRiskPredictionRequestDto;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -26,7 +28,10 @@ public class RiskPredictionService {
         // Get patient reference
         User patientRef = userRepository.getReferenceById(req.getPatientId());
 
-        // Build and save entity
+        // Use the model to predict risk level and probability
+        ModelRunner.PredictionResult modelResult = predictRiskLevel(req, patientRef);
+
+        // Build and save entity with model predictions
         RiskPrediction entity = RiskPrediction.builder()
                 .user(patientRef)
                 .temperature(req.getTemperature())
@@ -34,8 +39,8 @@ public class RiskPredictionService {
                 .pulse(req.getPulse())
                 .dehydrationLevel(req.getDehydrationLevel())
                 .heatIndex(req.getHeatIndex())
-                .predictedRiskLevel(req.getPredictedRiskLevel())
-                .predictedProbability(req.getPredictedProbability())
+                .predictedRiskLevel(modelResult.getPredictedRiskLevel())
+                .predictedProbability(modelResult.getPredictedProbability())
                 .assessmentTimestamp(LocalDateTime.now())
                 .notes(req.getNotes())
                 .build();
@@ -53,6 +58,40 @@ public class RiskPredictionService {
         );
     }
 
+    private ModelRunner.PredictionResult predictRiskLevel(CreateRiskPredictionRequestDto req, User user) {
+        // Calculate age (assuming we have birth date or age field)
+        // For now, we'll use a default age of 30 if not available
+        double age = 30.0; // TODO: Calculate actual age from user data
+        
+        // Convert gender to numeric (0 for female, 1 for male)
+        double sex = user.getGender() == 'M' ? 1.0 : 0.0;
+        
+        // Get user's weight and BMI
+        double weight = user.getWeight() != null ? user.getWeight().doubleValue() : 70.0;
+        double bmi = user.getBmi() != null ? user.getBmi().doubleValue() : 25.0;
+        
+        // Get environmental and physiological factors from request
+        double temperature = req.getTemperature().doubleValue();
+        double humidity = req.getHumidity().doubleValue();
+        double pulse = req.getPulse().doubleValue();
+        double dehydrationLevel = req.getDehydrationLevel() != null ? req.getDehydrationLevel().doubleValue() : 0.5;
+        double heatIndex = req.getHeatIndex() != null ? req.getHeatIndex().doubleValue() : temperature;
+        
+        // Additional factors (can be enhanced based on available data)
+        double patientTemperature = temperature + 1.0; // Assume patient temp is slightly higher than environmental
+        double sweating = dehydrationLevel > 0.7 ? 1.0 : 0.5; // More dehydration = less sweating
+        double hotDrySkin = dehydrationLevel > 0.8 ? 1.0 : 0.0; // High dehydration = hot/dry skin
+
+        // Create prediction input
+        ModelRunner.PredictionInput input = new ModelRunner.PredictionInput(
+                age, sex, weight, bmi, dehydrationLevel, heatIndex,
+                temperature, humidity, pulse, patientTemperature, sweating, hotDrySkin
+        );
+
+        // Get model prediction
+        return ModelRunner.predictRisk(input);
+    }
+
     public Page<RiskPredictionViewDto> getUserPredictions(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<RiskPrediction> predictions = predictionRepo.findAllByUser_IdOrderByAssessmentTimestampDesc(userId, pageable);
@@ -63,6 +102,12 @@ public class RiskPredictionService {
         return predictionRepo.findByIdAndUser_Id(predictionId, userId)
                 .map(this::convertToViewDto)
                 .orElseThrow(() -> new RuntimeException("Prediction not found for user"));
+    }
+
+    public Page<RiskPredictionViewDto> getAllPredictions(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<RiskPrediction> predictions = predictionRepo.findAllByOrderByAssessmentTimestampDesc(pageable);
+        return predictions.map(this::convertToViewDto);
     }
 
     public RiskPredictionViewDto convertToViewDto(RiskPrediction prediction) {

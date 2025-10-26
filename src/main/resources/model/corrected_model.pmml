@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PMML xmlns="http://www.dmg.org/PMML-4_4" xmlns:data="http://jpmml.org/jpmml-model/InlineTable" version="4.4">
+	<Header>
+		<Application name="SkLearn2PMML package" version="0.122.2"/>
+		<Timestamp>2025-09-28T08:43:56Z</Timestamp>
+	</Header>
+	<MiningBuildTask>
+		<Extension name="repr">PMMLPipeline(steps=[('scaler', StandardScaler()),
+       ('classifier', LogisticRegression(max_iter=1000, random_state=42))])</Extension>
+	</MiningBuildTask>
+	<DataDictionary>
+		<DataField name="y" optype="categorical" dataType="integer">
+			<Value value="0"/>
+			<Value value="1"/>
+			<Value value="2"/>
+		</DataField>
+		<DataField name="Age" optype="continuous" dataType="double"/>
+		<DataField name="Sex" optype="continuous" dataType="double"/>
+		<DataField name="Weight (kg)" optype="continuous" dataType="double"/>
+		<DataField name="BMI" optype="continuous" dataType="double"/>
+		<DataField name="Dehydration" optype="continuous" dataType="double"/>
+		<DataField name="Heat Index (HI)" optype="continuous" dataType="double"/>
+		<DataField name="Environmental temperature (C)" optype="continuous" dataType="double"/>
+		<DataField name="Relative Humidity" optype="continuous" dataType="double"/>
+		<DataField name="Heart / Pulse rate (b/min)" optype="continuous" dataType="double"/>
+		<DataField name="Patient temperature" optype="continuous" dataType="double"/>
+		<DataField name="Sweating" optype="continuous" dataType="double"/>
+		<DataField name="Hot/dry skin" optype="continuous" dataType="double"/>
+	</DataDictionary>
+	<RegressionModel functionName="classification" algorithmName="sklearn.linear_model._logistic.LogisticRegression" normalizationMethod="softmax">
+		<MiningSchema>
+			<MiningField name="y" usageType="target"/>
+			<MiningField name="Age"/>
+			<MiningField name="Sex"/>
+			<MiningField name="Weight (kg)"/>
+			<MiningField name="BMI"/>
+			<MiningField name="Dehydration"/>
+			<MiningField name="Heat Index (HI)"/>
+			<MiningField name="Environmental temperature (C)"/>
+			<MiningField name="Relative Humidity"/>
+			<MiningField name="Heart / Pulse rate (b/min)"/>
+			<MiningField name="Patient temperature"/>
+			<MiningField name="Sweating"/>
+			<MiningField name="Hot/dry skin"/>
+		</MiningSchema>
+		<Output>
+			<OutputField name="probability(0)" optype="continuous" dataType="double" feature="probability" value="0"/>
+			<OutputField name="probability(1)" optype="continuous" dataType="double" feature="probability" value="1"/>
+			<OutputField name="probability(2)" optype="continuous" dataType="double" feature="probability" value="2"/>
+		</Output>
+		<LocalTransformations>
+			<DerivedField name="standardScaler(Age)" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Age"/>
+						<Constant dataType="double">41.2409625</Constant>
+					</Apply>
+					<Constant dataType="double">15.005468447322588</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Sex)" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Sex"/>
+						<Constant dataType="double">0.516125</Constant>
+					</Apply>
+					<Constant dataType="double">0.4997399167316936</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Weight (kg))" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Weight (kg)"/>
+						<Constant dataType="double">47.728043015722506</Constant>
+					</Apply>
+					<Constant dataType="double">5.649116080952422</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(BMI)" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="BMI"/>
+						<Constant dataType="double">20.868630090186247</Constant>
+					</Apply>
+					<Constant dataType="double">1.2653425804826353</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Dehydration)" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Dehydration"/>
+						<Constant dataType="double">7.5E-4</Constant>
+					</Apply>
+					<Constant dataType="double">0.027375856150995536</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Heat Index (HI))" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Heat Index (HI)"/>
+						<Constant dataType="double">84.75491739092124</Constant>
+					</Apply>
+					<Constant dataType="double">16.390226688014977</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Environmental temperature (C))" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Environmental temperature (C)"/>
+						<Constant dataType="double">31.4083863947925</Constant>
+					</Apply>
+					<Constant dataType="double">5.734561802369672</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Relative Humidity)" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Relative Humidity"/>
+						<Constant dataType="double">0.13616651669624996</Constant>
+					</Apply>
+					<Constant dataType="double">0.12894521488317048</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Heart / Pulse rate (b/min))" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Heart / Pulse rate (b/min)"/>
+						<Constant dataType="double">119.68476728099125</Constant>
+					</Apply>
+					<Constant dataType="double">27.706973168381698</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Patient temperature)" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Patient temperature"/>
+						<Constant dataType="double">36.8910826673475</Constant>
+					</Apply>
+					<Constant dataType="double">1.9575290540084374</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Sweating)" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Sweating"/>
+						<Constant dataType="double">0.43975</Constant>
+					</Apply>
+					<Constant dataType="double">0.49635666359987557</Constant>
+				</Apply>
+			</DerivedField>
+			<DerivedField name="standardScaler(Hot/dry skin)" optype="continuous" dataType="double">
+				<Apply function="/">
+					<Apply function="-">
+						<FieldRef field="Hot/dry skin"/>
+						<Constant dataType="double">0.070875</Constant>
+					</Apply>
+					<Constant dataType="double">0.25661592775001324</Constant>
+				</Apply>
+			</DerivedField>
+		</LocalTransformations>
+		<RegressionTable intercept="1.4537450107598586" targetCategory="0">
+			<NumericPredictor name="standardScaler(Age)" coefficient="0.12728712025210007"/>
+			<NumericPredictor name="standardScaler(Sex)" coefficient="-0.02565960447932357"/>
+			<NumericPredictor name="standardScaler(Weight (kg))" coefficient="0.014731379743040965"/>
+			<NumericPredictor name="standardScaler(BMI)" coefficient="0.05094272831251881"/>
+			<NumericPredictor name="standardScaler(Dehydration)" coefficient="0.006585275905135591"/>
+			<NumericPredictor name="standardScaler(Heat Index (HI))" coefficient="0.7889084991971421"/>
+			<NumericPredictor name="standardScaler(Environmental temperature (C))" coefficient="0.07561038941650304"/>
+			<NumericPredictor name="standardScaler(Relative Humidity)" coefficient="0.1529105623043502"/>
+			<NumericPredictor name="standardScaler(Heart / Pulse rate (b/min))" coefficient="0.9915444472005248"/>
+			<NumericPredictor name="standardScaler(Patient temperature)" coefficient="0.45089707867356293"/>
+			<NumericPredictor name="standardScaler(Sweating)" coefficient="0.05360947060757384"/>
+			<NumericPredictor name="standardScaler(Hot/dry skin)" coefficient="0.36931430938031223"/>
+		</RegressionTable>
+		<RegressionTable intercept="0.9048653393149682" targetCategory="1">
+			<NumericPredictor name="standardScaler(Age)" coefficient="-0.06971796058342614"/>
+			<NumericPredictor name="standardScaler(Sex)" coefficient="-0.06359399194396244"/>
+			<NumericPredictor name="standardScaler(Weight (kg))" coefficient="-0.01481162354679157"/>
+			<NumericPredictor name="standardScaler(BMI)" coefficient="0.02298491219154948"/>
+			<NumericPredictor name="standardScaler(Dehydration)" coefficient="-0.04646074943696805"/>
+			<NumericPredictor name="standardScaler(Heat Index (HI))" coefficient="-0.3511720598361325"/>
+			<NumericPredictor name="standardScaler(Environmental temperature (C))" coefficient="-0.23473137694387441"/>
+			<NumericPredictor name="standardScaler(Relative Humidity)" coefficient="0.2311335157861904"/>
+			<NumericPredictor name="standardScaler(Heart / Pulse rate (b/min))" coefficient="0.9198636549337056"/>
+			<NumericPredictor name="standardScaler(Patient temperature)" coefficient="-0.11215809267333057"/>
+			<NumericPredictor name="standardScaler(Sweating)" coefficient="0.09117628520007101"/>
+			<NumericPredictor name="standardScaler(Hot/dry skin)" coefficient="-0.05556866147348728"/>
+		</RegressionTable>
+		<RegressionTable intercept="-2.358610350074783" targetCategory="2">
+			<NumericPredictor name="standardScaler(Age)" coefficient="-0.05756915966867353"/>
+			<NumericPredictor name="standardScaler(Sex)" coefficient="0.0892535964232836"/>
+			<NumericPredictor name="standardScaler(Weight (kg))" coefficient="8.02438037525281E-5"/>
+			<NumericPredictor name="standardScaler(BMI)" coefficient="-0.07392764050406855"/>
+			<NumericPredictor name="standardScaler(Dehydration)" coefficient="0.039875473531832906"/>
+			<NumericPredictor name="standardScaler(Heat Index (HI))" coefficient="-0.437736439361012"/>
+			<NumericPredictor name="standardScaler(Environmental temperature (C))" coefficient="0.1591209875273662"/>
+			<NumericPredictor name="standardScaler(Relative Humidity)" coefficient="-0.38404407809053953"/>
+			<NumericPredictor name="standardScaler(Heart / Pulse rate (b/min))" coefficient="-1.9114081021342264"/>
+			<NumericPredictor name="standardScaler(Patient temperature)" coefficient="-0.3387389860002319"/>
+			<NumericPredictor name="standardScaler(Sweating)" coefficient="-0.1447857558076525"/>
+			<NumericPredictor name="standardScaler(Hot/dry skin)" coefficient="-0.31374564790682496"/>
+		</RegressionTable>
+	</RegressionModel>
+</PMML>
