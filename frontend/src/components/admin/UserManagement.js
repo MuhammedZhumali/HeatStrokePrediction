@@ -50,6 +50,7 @@ const UserManagement = () => {
     height: '',
     weight: '',
     role: 'PATIENT',
+    password: '',
   });
   const [error, setError] = useState('');
   const { user: currentUser } = useAuth();
@@ -104,7 +105,8 @@ const UserManagement = () => {
         gender: user.gender || 'M',
         height: user.height || '',
         weight: user.weight || '',
-        role: user.roleType === 'ADMIN' ? 'ADMIN' : 'PATIENT',
+        role: user.roleType === 'ADMIN' ? 'ADMIN' : user.roleType === 'SUPPORT' ? 'SUPPORT' : 'PATIENT',
+        password: '', // Don't show password when editing
       });
     } else {
       setEditingUser(null);
@@ -116,6 +118,7 @@ const UserManagement = () => {
         height: '',
         weight: '',
         role: 'PATIENT',
+        password: '',
       });
     }
     setError('');
@@ -133,6 +136,7 @@ const UserManagement = () => {
       height: '',
       weight: '',
       role: 'PATIENT',
+      password: '',
     });
     setError('');
   };
@@ -275,15 +279,19 @@ const UserManagement = () => {
                 <TableCell>ID</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Email</TableCell>
+                <TableCell>Phone</TableCell>
+                <TableCell>Gender</TableCell>
+                <TableCell>Height</TableCell>
+                <TableCell>Weight</TableCell>
+                <TableCell>BMI</TableCell>
                 <TableCell>Role</TableCell>
-                <TableCell>Created</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                     <CircularProgress />
                     <Typography variant="body2" sx={{ mt: 1 }}>
                       Loading users...
@@ -296,16 +304,18 @@ const UserManagement = () => {
                     <TableCell>#{user.id}</TableCell>
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phoneNumber || 'N/A'}</TableCell>
+                    <TableCell>{user.gender === 'M' ? 'Male' : 'Female'}</TableCell>
+                    <TableCell>{user.height ? `${user.height} cm` : 'N/A'}</TableCell>
+                    <TableCell>{user.weight ? `${user.weight} kg` : 'N/A'}</TableCell>
+                    <TableCell>{user.bmi ? user.bmi.toFixed(1) : 'N/A'}</TableCell>
                     <TableCell>
                       <Chip
-                        icon={getRoleIcon(user.role)}
-                        label={user.role}
-                        color={getRoleColor(user.role)}
+                        icon={getRoleIcon(user.roleType)}
+                        label={user.roleType}
+                        color={getRoleColor(user.roleType)}
                         size="small"
                       />
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       <IconButton
@@ -330,7 +340,7 @@ const UserManagement = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                     <Typography variant="body1" color="text.secondary">
                       No users found
                     </Typography>
@@ -373,6 +383,19 @@ const UserManagement = () => {
               margin="normal"
               required
             />
+            
+            {!editingUser && (
+              <TextField
+                fullWidth
+                label="Password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                margin="normal"
+                required
+                helperText="Default password will be used if not provided"
+              />
+            )}
             
             <TextField
               fullWidth

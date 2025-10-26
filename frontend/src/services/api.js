@@ -18,7 +18,7 @@ api.interceptors.request.use(
     console.log('Request headers:', config.headers);
     
     // Add basic auth for admin requests
-    if (config.url?.includes('/api/predictions') && config.method === 'post') {
+    if (config.url?.includes('/api/predictions') || config.url?.includes('/user/')) {
       // For now, use hardcoded admin credentials
       // In a real app, you'd get these from the logged-in user
       const adminCredentials = btoa('Muhalek:pass123');
@@ -54,15 +54,17 @@ export const createRiskPrediction = async (predictionData) => {
   }
 };
 
-export const getRecentPredictions = async () => {
+export const getRecentPredictions = async (userId = 1) => {
   try {
-    // Since backend doesn't have a /recent endpoint, we'll get the first page of predictions
-    const response = await api.get('/api/predictions/user/1?page=0&size=5');
+    // Get the first page of predictions for the specified user
+    const response = await api.get(`/api/predictions/user/${userId}?page=0&size=5`);
+    const predictions = response.data.content || [];
+    
     return {
-      predictions: response.data.content || [],
+      predictions: predictions,
       total: response.data.totalElements || 0,
-      highRisk: response.data.content?.filter(p => p.predictedRiskLevel === 'HIGH').length || 0,
-      lowRisk: response.data.content?.filter(p => p.predictedRiskLevel === 'LOW').length || 0,
+      highRisk: predictions.filter(p => p.predictedRiskLevel === 'HIGH').length,
+      lowRisk: predictions.filter(p => p.predictedRiskLevel === 'LOW').length,
     };
   } catch (error) {
     console.error('Error fetching recent predictions:', error);
@@ -70,16 +72,18 @@ export const getRecentPredictions = async () => {
   }
 };
 
-export const getPredictionHistory = async (page = 0, size = 10, search = '') => {
+export const getPredictionHistory = async (page = 0, size = 10, search = '', userId = 1) => {
   try {
-    // Backend expects userId in the path, using default user ID 1
-    const response = await api.get(`/api/predictions/user/1?page=${page}&size=${size}`);
+    // Get predictions for the specified user
+    const response = await api.get(`/api/predictions/user/${userId}?page=${page}&size=${size}`);
+    const predictions = response.data.content || [];
+    
     return {
-      predictions: response.data.content || [],
+      predictions: predictions,
       total: response.data.totalElements || 0,
-      highRiskCount: response.data.content?.filter(p => p.predictedRiskLevel === 'HIGH').length || 0,
-      mediumRiskCount: response.data.content?.filter(p => p.predictedRiskLevel === 'MEDIUM').length || 0,
-      lowRiskCount: response.data.content?.filter(p => p.predictedRiskLevel === 'LOW').length || 0,
+      highRiskCount: predictions.filter(p => p.predictedRiskLevel === 'HIGH').length,
+      mediumRiskCount: predictions.filter(p => p.predictedRiskLevel === 'MEDIUM').length,
+      lowRiskCount: predictions.filter(p => p.predictedRiskLevel === 'LOW').length,
     };
   } catch (error) {
     console.error('Error fetching prediction history:', error);
@@ -87,12 +91,20 @@ export const getPredictionHistory = async (page = 0, size = 10, search = '') => 
   }
 };
 
-export const getPredictionById = async (userId, predictionId) => {
+export const getAllPredictions = async (page = 0, size = 10) => {
   try {
-    const response = await api.get(`/api/predictions/${predictionId}/user/${userId}`);
-    return response.data;
+    const response = await api.get(`/api/predictions/all?page=${page}&size=${size}`);
+    const predictions = response.data.content || [];
+    
+    return {
+      predictions: predictions,
+      total: response.data.totalElements || 0,
+      highRiskCount: predictions.filter(p => p.predictedRiskLevel === 'HIGH').length,
+      mediumRiskCount: predictions.filter(p => p.predictedRiskLevel === 'MEDIUM').length,
+      lowRiskCount: predictions.filter(p => p.predictedRiskLevel === 'LOW').length,
+    };
   } catch (error) {
-    console.error('Error fetching prediction:', error);
+    console.error('Error fetching all predictions:', error);
     throw error;
   }
 };
@@ -204,63 +216,11 @@ export const logoutUser = async () => {
   }
 };
 
-// User management endpoints - Updated to match backend API
+// User management endpoints - Connected to real backend
 export const getUsers = async () => {
   try {
-    // For now, return mock data since backend might not be running
-    // TODO: Replace with actual API call when backend is available
-    const mockUsers = [
-      {
-        id: 1,
-        name: 'Admin',
-        email: 'admin',
-        phoneNumber: '+1234567890',
-        gender: 'M',
-        height: 180,
-        weight: 75,
-        roleType: 'ADMIN',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phoneNumber: '+1234567891',
-        gender: 'M',
-        height: 175,
-        weight: 70,
-        roleType: 'PATIENT',
-        createdAt: new Date(Date.now() - 86400000).toISOString()
-      },
-      {
-        id: 3,
-        name: 'Jane Smith',
-        email: 'jane.smith@example.com',
-        phoneNumber: '+1234567892',
-        gender: 'F',
-        height: 165,
-        weight: 60,
-        roleType: 'PATIENT',
-        createdAt: new Date(Date.now() - 172800000).toISOString()
-      },
-      {
-        id: 4,
-        name: 'Support Agent',
-        email: 'support@heatstroke.com',
-        phoneNumber: '+1234567893',
-        gender: 'F',
-        height: 170,
-        weight: 65,
-        roleType: 'SUPPORT',
-        createdAt: new Date(Date.now() - 259200000).toISOString()
-      }
-    ];
-    
-    return mockUsers;
-    
-    // Uncomment when backend is available:
-    // const response = await api.get('/user/all');
-    // return response.data;
+    const response = await api.get('/user/all');
+    return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
@@ -269,6 +229,13 @@ export const getUsers = async () => {
 
 export const createUser = async (userData) => {
   try {
+    // Calculate BMI if height and weight are provided
+    let bmi = null;
+    if (userData.height && userData.weight) {
+      const heightInMeters = userData.height / 100;
+      bmi = userData.weight / (heightInMeters * heightInMeters);
+    }
+    
     // Transform frontend user data to match backend User model
     const backendUserData = {
       name: userData.name,
@@ -277,7 +244,9 @@ export const createUser = async (userData) => {
       gender: userData.gender || 'M',
       height: userData.height || null,
       weight: userData.weight || null,
-      roleType: userData.role === 'ADMIN' ? 'ADMIN' : 'PATIENT'
+      bmi: bmi,
+      roleType: userData.role === 'ADMIN' ? 'ADMIN' : userData.role === 'SUPPORT' ? 'SUPPORT' : 'PATIENT',
+      password: userData.password || 'defaultPassword123' // Default password for new users
     };
     
     const response = await api.post('/user/add', backendUserData);
@@ -290,6 +259,13 @@ export const createUser = async (userData) => {
 
 export const updateUser = async (id, userData) => {
   try {
+    // Calculate BMI if height and weight are provided
+    let bmi = null;
+    if (userData.height && userData.weight) {
+      const heightInMeters = userData.height / 100;
+      bmi = userData.weight / (heightInMeters * heightInMeters);
+    }
+    
     // Transform frontend user data to match backend User model
     const backendUserData = {
       name: userData.name,
@@ -298,7 +274,8 @@ export const updateUser = async (id, userData) => {
       gender: userData.gender || 'M',
       height: userData.height || null,
       weight: userData.weight || null,
-      roleType: userData.role === 'ADMIN' ? 'ADMIN' : 'PATIENT'
+      bmi: bmi,
+      roleType: userData.role === 'ADMIN' ? 'ADMIN' : userData.role === 'SUPPORT' ? 'SUPPORT' : 'PATIENT'
     };
     
     const response = await api.put(`/user/update/${id}`, backendUserData);
