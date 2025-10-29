@@ -27,12 +27,14 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { format } from 'date-fns';
-import { getPredictionHistory } from '../services/api';
+import { getPredictionHistory, getAllPredictions } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const PredictionHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const { user: currentUser } = useAuth();
 
   const {
     data: historyData,
@@ -40,8 +42,15 @@ const PredictionHistory = () => {
     error,
     refetch,
   } = useQuery(
-    ['predictionHistory', page, rowsPerPage, searchTerm],
-    () => getPredictionHistory(page, rowsPerPage, searchTerm),
+    ['predictionHistory', page, rowsPerPage, searchTerm, currentUser?.roleType, currentUser?.id],
+    () => {
+      // Use admin endpoint if user is admin, otherwise use user-specific endpoint
+      if (currentUser?.roleType === 'ADMIN') {
+        return getAllPredictions(page, rowsPerPage);
+      } else {
+        return getPredictionHistory(page, rowsPerPage, searchTerm, currentUser?.id || 1);
+      }
+    },
     {
       keepPreviousData: true,
     }
@@ -187,6 +196,7 @@ const PredictionHistory = () => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
+                {currentUser?.roleType === 'ADMIN' && <TableCell>User</TableCell>}
                 <TableCell>Date</TableCell>
                 <TableCell>Temperature</TableCell>
                 <TableCell>Humidity</TableCell>
@@ -200,7 +210,7 @@ const PredictionHistory = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={currentUser?.roleType === 'ADMIN' ? 10 : 9} align="center" sx={{ py: 4 }}>
                     <CircularProgress />
                     <Typography variant="body2" sx={{ mt: 1 }}>
                       Loading predictions...
@@ -211,6 +221,9 @@ const PredictionHistory = () => {
                 historyData.predictions.map((prediction) => (
                   <TableRow key={prediction.id} hover>
                     <TableCell>#{prediction.id}</TableCell>
+                    {currentUser?.roleType === 'ADMIN' && (
+                      <TableCell>User #{prediction.userId}</TableCell>
+                    )}
                     <TableCell>
                       {format(new Date(prediction.assessmentTimestamp), 'MMM dd, yyyy HH:mm')}
                     </TableCell>
@@ -235,7 +248,7 @@ const PredictionHistory = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={currentUser?.roleType === 'ADMIN' ? 10 : 9} align="center" sx={{ py: 4 }}>
                     <Typography variant="body1" color="text.secondary">
                       No predictions found
                     </Typography>

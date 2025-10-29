@@ -44,4 +44,13 @@ public class RiskPredictionController {
     ) {
         return service.getUserPredictionById(userId, predictionId);
     }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<RiskPredictionViewDto> getAllPredictions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return service.getAllPredictions(page, size);
+    }
 }

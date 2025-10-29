@@ -11,5 +11,7 @@ public interface RiskPredictionRepository extends JpaRepository<RiskPrediction, 
 
     Page<RiskPrediction> findAllByUser_IdOrderByAssessmentTimestampDesc(Long userId, Pageable pageable);
 
+    Page<RiskPrediction> findAllByOrderByAssessmentTimestampDesc(Pageable pageable);
+
     Optional<RiskPrediction> findByIdAndUser_Id(Long id, Long userId);
 }

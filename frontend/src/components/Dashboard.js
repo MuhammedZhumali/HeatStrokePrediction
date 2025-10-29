@@ -18,7 +18,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { getRecentPredictions } from '../services/api';
+import { getRecentPredictions, getAllPredictions } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const StatCard = ({ title, value, icon, color, trend }) => (
   <Card sx={{ height: '100%' }}>
@@ -43,12 +44,21 @@ const StatCard = ({ title, value, icon, color, trend }) => (
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   
-  const { data: recentPredictions, isLoading } = useQuery(
-    'recentPredictions',
-    getRecentPredictions,
+  const { data: recentPredictions, isLoading, error } = useQuery(
+    ['dashboardPredictions', currentUser?.roleType, currentUser?.id],
+    () => {
+      // Use admin endpoint if user is admin, otherwise use user-specific endpoint
+      if (currentUser?.roleType === 'ADMIN') {
+        return getAllPredictions(0, 5);
+      } else {
+        return getRecentPredictions(currentUser?.id || 1);
+      }
+    },
     {
       refetchInterval: 30000, // Refetch every 30 seconds
+      enabled: !!currentUser, // Only run query when user is available
     }
   );
 
@@ -61,22 +71,21 @@ const Dashboard = () => {
     },
     {
       title: 'High Risk Cases',
-      value: recentPredictions?.highRisk || 0,
+      value: recentPredictions?.highRiskCount || recentPredictions?.highRisk || 0,
       icon: <Warning color="error" />,
       color: 'error.main',
     },
     {
-      title: 'Low Risk Cases',
-      value: recentPredictions?.lowRisk || 0,
-      icon: <CheckCircle color="success" />,
-      color: 'success.main',
+      title: 'Medium Risk Cases',
+      value: recentPredictions?.mediumRiskCount || 0,
+      icon: <Warning color="warning" />,
+      color: 'warning.main',
     },
     {
-      title: 'Success Rate',
-      value: '94.2%',
-      icon: <TrendingUp color="info" />,
-      color: 'info.main',
-      trend: '+2.1% from last month',
+      title: 'Low Risk Cases',
+      value: recentPredictions?.lowRiskCount || recentPredictions?.lowRisk || 0,
+      icon: <CheckCircle color="success" />,
+      color: 'success.main',
     },
   ];
 
@@ -92,6 +101,25 @@ const Dashboard = () => {
         return 'default';
     }
   };
+
+  if (error) {
+    return (
+      <Box>
+        <Typography variant="h4" component="h1" gutterBottom>
+          HeatStroke Risk Prediction Dashboard
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 4 }}>
+          Monitor and analyze heatstroke risk predictions in real-time
+        </Typography>
+        <Typography color="error" sx={{ mb: 2 }}>
+          Error loading dashboard data: {error.message}
+        </Typography>
+        <Button variant="contained" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -119,12 +147,14 @@ const Dashboard = () => {
               Recent Predictions
             </Typography>
             {isLoading ? (
-              <Typography>Loading recent predictions...</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography>Loading recent predictions...</Typography>
+              </Box>
             ) : recentPredictions?.predictions?.length > 0 ? (
               <Box>
                 {recentPredictions.predictions.slice(0, 5).map((prediction, index) => (
                   <Box
-                    key={index}
+                    key={prediction.id || index}
                     sx={{
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -136,6 +166,11 @@ const Dashboard = () => {
                     <Box>
                       <Typography variant="body1">
                         Prediction #{prediction.id}
+                        {currentUser?.roleType === 'ADMIN' && prediction.userId && (
+                          <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                            (User #{prediction.userId})
+                          </Typography>
+                        )}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {new Date(prediction.assessmentTimestamp).toLocaleString()}

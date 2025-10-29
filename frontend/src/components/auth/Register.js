@@ -36,6 +36,9 @@ const Register = () => {
       email: '',
       password: '',
       confirmPassword: '',
+      gender: 'M',
+      height: '',
+      weight: '',
       role: 'USER',
     },
   });
@@ -193,6 +196,72 @@ const Register = () => {
             />
 
             <Controller
+              name="gender"
+              control={control}
+              rules={{ required: 'Gender is required' }}
+              render={({ field }) => (
+                <FormControl fullWidth margin="normal" error={!!errors.gender}>
+                  <InputLabel>Gender</InputLabel>
+                  <Select {...field} label="Gender">
+                    <MenuItem value="M">Male</MenuItem>
+                    <MenuItem value="F">Female</MenuItem>
+                  </Select>
+                  {errors.gender && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                      {errors.gender.message}
+                    </Typography>
+                  )}
+                </FormControl>
+              )}
+            />
+
+            <Controller
+              name="height"
+              control={control}
+              rules={{
+                required: 'Height is required',
+                min: { value: 100, message: 'Height must be at least 100 cm' },
+                max: { value: 250, message: 'Height must be at most 250 cm' },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  required
+                  fullWidth
+                  label="Height (cm)"
+                  type="number"
+                  inputProps={{ min: 100, max: 250 }}
+                  error={!!errors.height}
+                  helperText={errors.height?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="weight"
+              control={control}
+              rules={{
+                required: 'Weight is required',
+                min: { value: 30, message: 'Weight must be at least 30 kg' },
+                max: { value: 300, message: 'Weight must be at most 300 kg' },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  margin="normal"
+                  required
+                  fullWidth
+                  label="Weight (kg)"
+                  type="number"
+                  inputProps={{ min: 30, max: 300 }}
+                  error={!!errors.weight}
+                  helperText={errors.weight?.message}
+                />
+              )}
+            />
+
+            <Controller
               name="role"
               control={control}
               render={({ field }) => (
@@ -233,3 +302,4 @@ const Register = () => {
 };
 
 export default Register;
+

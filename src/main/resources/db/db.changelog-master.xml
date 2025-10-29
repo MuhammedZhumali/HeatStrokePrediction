@@ -5,7 +5,8 @@
                    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
 
     <include file="changesets/user-table.xml" relativeToChangelogFile="true"/>
-    <include file="changesets/drop-bmi.xml" relativeToChangelogFile="true"/>
     <include file="changesets/prediction-table.xml" relativeToChangelogFile="true"/>
+    <include file="changesets/password-column.xml" relativeToChangelogFile="true"/>
+    <include file="changesets/add-bmi.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

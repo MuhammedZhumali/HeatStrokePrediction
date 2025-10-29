@@ -67,6 +67,9 @@ public class UserServiceImpl implements UserSerivce {
             if(user.getHeight()!=null){
                 updatedUser.setHeight(user.getHeight());
             }
+            if(user.getBmi()!=null){
+                updatedUser.setBmi(user.getBmi());
+            }
 
             return userRepository.save(updatedUser);
         } else {

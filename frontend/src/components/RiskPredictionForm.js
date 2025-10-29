@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -15,33 +15,59 @@ import {
   Card,
   CardContent,
   Chip,
+  Divider,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
-import { useMutation, useQueryClient } from 'react-query';
-import { createRiskPrediction } from '../services/api';
+import { useMutation, useQueryClient, useQuery } from 'react-query';
+import { createRiskPrediction, getUsers } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const RiskPredictionForm = () => {
   const [predictionResult, setPredictionResult] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+
+  // Fetch users for admin selection
+  const { data: users, isLoading: usersLoading } = useQuery(
+    'users',
+    getUsers,
+    {
+      enabled: currentUser?.roleType === 'ADMIN', // Only fetch if admin
+    }
+  );
 
   const {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      patientId: 1, // Default patient ID
+      patientId: currentUser?.id || 1,
       temperature: '',
       humidity: '',
       pulse: '',
       dehydrationLevel: '',
       heatIndex: '',
-      predictedProbability: '',
-      predictedRiskLevel: '',
+      age: '',
+      patientTemperature: '',
+      sweating: '',
+      hotDrySkin: '',
       notes: '',
     },
   });
+
+  const watchedValues = watch();
+
+  // Update selected user when patientId changes
+  useEffect(() => {
+    if (users && watchedValues.patientId) {
+      const user = users.find(u => u.id === parseInt(watchedValues.patientId));
+      setSelectedUser(user);
+    }
+  }, [watchedValues.patientId, users]);
 
   const createPredictionMutation = useMutation(createRiskPrediction, {
     onSuccess: (data) => {
@@ -97,6 +123,64 @@ const RiskPredictionForm = () => {
           <Paper sx={{ p: 3 }}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <Grid container spacing={3}>
+                {/* User Selection (Admin only) */}
+                {currentUser?.roleType === 'ADMIN' && (
+                  <>
+                    <Grid item xs={12}>
+                      <Typography variant="h6" gutterBottom>
+                        Patient Selection
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Controller
+                        name="patientId"
+                        control={control}
+                        rules={{ required: 'Please select a patient' }}
+                        render={({ field }) => (
+                          <FormControl fullWidth error={!!errors.patientId}>
+                            <InputLabel>Select Patient</InputLabel>
+                            <Select {...field} label="Select Patient" disabled={usersLoading}>
+                              {usersLoading ? (
+                                <MenuItem disabled>Loading patients...</MenuItem>
+                              ) : (
+                                users?.map((user) => (
+                                  <MenuItem key={user.id} value={user.id}>
+                                    {user.name} ({user.email})
+                                  </MenuItem>
+                                ))
+                              )}
+                            </Select>
+                          </FormControl>
+                        )}
+                      />
+                    </Grid>
+                    {selectedUser && (
+                      <Grid item xs={12} sm={6}>
+                        <Card variant="outlined" sx={{ p: 2 }}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Selected Patient Info
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Name:</strong> {selectedUser.name}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Gender:</strong> {selectedUser.gender === 'M' ? 'Male' : 'Female'}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>Weight:</strong> {selectedUser.weight ? `${selectedUser.weight} kg` : 'N/A'}
+                          </Typography>
+                          <Typography variant="body2">
+                            <strong>BMI:</strong> {selectedUser.bmi ? selectedUser.bmi.toFixed(1) : 'N/A'}
+                          </Typography>
+                        </Card>
+                      </Grid>
+                    )}
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 2 }} />
+                    </Grid>
+                  </>
+                )}
+
                 {/* Environmental Factors */}
                 <Grid item xs={12}>
                   <Typography variant="h6" gutterBottom>
@@ -200,20 +284,28 @@ const RiskPredictionForm = () => {
                   />
                 </Grid>
 
+                {/* Additional Model Inputs */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                    Additional Factors (Optional)
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    These factors help improve prediction accuracy. Leave empty to use default values.
+                  </Typography>
+                </Grid>
+
                 <Grid item xs={12} sm={6}>
                   <Controller
-                    name="predictedProbability"
+                    name="age"
                     control={control}
-                    rules={{ required: 'Predicted probability is required' }}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        label="Predicted Probability (0-1)"
+                        label="Age (years)"
                         type="number"
-                        step="0.01"
                         fullWidth
-                        error={!!errors.predictedProbability}
-                        helperText={errors.predictedProbability?.message}
+                        error={!!errors.age}
+                        helperText={errors.age?.message || "Default: 30 years"}
                       />
                     )}
                   />
@@ -221,18 +313,54 @@ const RiskPredictionForm = () => {
 
                 <Grid item xs={12} sm={6}>
                   <Controller
-                    name="predictedRiskLevel"
+                    name="patientTemperature"
                     control={control}
-                    rules={{ required: 'Predicted risk level is required' }}
                     render={({ field }) => (
-                      <FormControl fullWidth error={!!errors.predictedRiskLevel}>
-                        <InputLabel>Predicted Risk Level</InputLabel>
-                        <Select {...field} label="Predicted Risk Level">
-                          <MenuItem value="LOW">Low</MenuItem>
-                          <MenuItem value="MEDIUM">Medium</MenuItem>
-                          <MenuItem value="HIGH">High</MenuItem>
-                        </Select>
-                      </FormControl>
+                      <TextField
+                        {...field}
+                        label="Patient Temperature (°C)"
+                        type="number"
+                        step="0.1"
+                        fullWidth
+                        error={!!errors.patientTemperature}
+                        helperText={errors.patientTemperature?.message || "Default: Environmental temp + 1°C"}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Controller
+                    name="sweating"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Sweating Level (0-1)"
+                        type="number"
+                        step="0.1"
+                        fullWidth
+                        error={!!errors.sweating}
+                        helperText={errors.sweating?.message || "0 = No sweating, 1 = Normal sweating"}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Controller
+                    name="hotDrySkin"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Hot/Dry Skin (0-1)"
+                        type="number"
+                        step="0.1"
+                        fullWidth
+                        error={!!errors.hotDrySkin}
+                        helperText={errors.hotDrySkin?.message || "0 = Normal skin, 1 = Hot/dry skin"}
+                      />
                     )}
                   />
                 </Grid>
@@ -269,8 +397,8 @@ const RiskPredictionForm = () => {
                       }
                     >
                       {createPredictionMutation.isLoading
-                        ? 'Analyzing...'
-                        : 'Predict Risk'}
+                        ? 'Analyzing with AI Model...'
+                        : 'Predict Risk with AI Model'}
                     </Button>
                     <Button
                       variant="outlined"
@@ -309,9 +437,12 @@ const RiskPredictionForm = () => {
                   </Typography>
                   {predictionResult.predictedProbability && (
                     <Typography variant="body2" sx={{ mt: 1 }}>
-                      Probability: {Math.round(predictionResult.predictedProbability * 100)}%
+                      Confidence: {Math.round(predictionResult.predictedProbability * 100)}%
                     </Typography>
                   )}
+                  <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+                    🤖 AI Model Prediction
+                  </Typography>
                 </Box>
               </CardContent>
             </Card>
@@ -325,7 +456,19 @@ const RiskPredictionForm = () => {
 
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Tips for Heat Safety
+              🤖 AI Model Information
+            </Typography>
+            <Typography variant="body2" component="div" sx={{ mb: 2 }}>
+              Our AI model analyzes multiple factors to predict heatstroke risk:
+              <ul>
+                <li>Environmental conditions (temperature, humidity)</li>
+                <li>Patient characteristics (age, gender, BMI)</li>
+                <li>Physiological factors (pulse, dehydration, skin condition)</li>
+                <li>Heat index and patient temperature</li>
+              </ul>
+            </Typography>
+            <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+              Heat Safety Tips
             </Typography>
             <Typography variant="body2" component="div">
               <ul>
