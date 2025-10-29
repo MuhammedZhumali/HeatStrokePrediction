@@ -4,6 +4,7 @@ import heat.main.enums.RiskLevel;
 import org.jpmml.evaluator.*;
 import org.jpmml.model.PMMLException;
 import org.xml.sax.SAXException;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.xml.bind.JAXBException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -14,10 +15,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class ModelRunner {
 
     private static ModelEvaluator<?> evaluator;
     private static boolean initialized = false;
+    private static int predictionCounter = 0;
 
     static {
         initializeModel();
@@ -40,16 +43,18 @@ public class ModelRunner {
             evaluator.verify();
             initialized = true;
 
-            System.out.println("Model loaded successfully!");
+            log.info("Model loaded successfully!");
             
             // Log input fields for debugging
+            log.info("=== Model Input Fields ===");
             for (InputField f : evaluator.getInputFields()) {
-                System.out.println("Input Field: " + f.getName() + " | Type: " + f.getDataType());
+                log.info("Input Field: {} | Type: {}", f.getName(), f.getDataType());
             }
 
             // Log output fields for debugging
+            log.info("=== Model Output Fields ===");
             for (OutputField f : evaluator.getOutputFields()) {
-                System.out.println("Output Field: " + f.getName() + " | Type: " + f.getDataType());
+                log.info("Output Field: {} | Type: {}", f.getName(), f.getDataType());
             }
 
         } catch (ParserConfigurationException | SAXException | PMMLException | IOException | JAXBException e) {
@@ -62,6 +67,9 @@ public class ModelRunner {
         if (!initialized) {
             throw new IllegalStateException("Model not initialized");
         }
+
+        predictionCounter++;
+        int currentPredictionId = predictionCounter;
 
         try {
             // Prepare input data for the model
@@ -80,6 +88,11 @@ public class ModelRunner {
             inputData.put("Patient temperature", input.getPatientTemperature());
             inputData.put("Sweating", input.getSweating());
             inputData.put("Hot/dry skin", input.getHotDrySkin());
+
+            // Log detailed patient properties
+            log.info("=== Prediction #{} ===", currentPredictionId);
+            log.info("Patient {}:", currentPredictionId);
+            log.info("  Properties: {}", inputData);
 
             // Create input vector
             Map<String, FieldValue> arguments = new HashMap<>();
@@ -105,41 +118,64 @@ public class ModelRunner {
             }
 
             // Get probabilities
-            Double prob0 = (Double) resultMap.get("probability(0)");
-            Double prob1 = (Double) resultMap.get("probability(1)");
-            Double prob2 = (Double) resultMap.get("probability(2)");
+            // CORRECTED MAPPING: sklearn LabelEncoder sorts alphabetically
+            // 0 = "High", 1 = "Moderate", 2 = "No"
+            Double probHigh = (Double) resultMap.get("probability(0)");
+            Double probModerate = (Double) resultMap.get("probability(1)");
+            Double probNo = (Double) resultMap.get("probability(2)");
+
+            // Log raw probabilities for debugging
+            log.debug("Raw probabilities - High: {}, Moderate: {}, No: {}", probHigh, probModerate, probNo);
 
             // Determine risk level based on highest probability
             RiskLevel riskLevel;
             Double maxProbability;
             
-            if (prob2 != null && prob2 >= prob1 && prob2 >= prob0) {
+            if (probHigh != null && probHigh >= probModerate && probHigh >= probNo) {
                 riskLevel = RiskLevel.HIGH;
-                maxProbability = prob2;
-            } else if (prob1 != null && prob1 >= prob0) {
+                maxProbability = probHigh;
+            } else if (probModerate != null && probModerate >= probNo) {
                 riskLevel = RiskLevel.MEDIUM;
-                maxProbability = prob1;
+                maxProbability = probModerate;
             } else {
                 riskLevel = RiskLevel.LOW;
-                maxProbability = prob0 != null ? prob0 : 0.0;
+                maxProbability = probNo != null ? probNo : 0.0;
             }
+
+            // Log detailed prediction results
+            log.info("  Predicted Risk Label: {}", riskLevel);
+            log.info("  Predicted Probabilities: High:{}, Moderate:{}, No:{}", 
+                    String.format("%.3f", probHigh != null ? probHigh * 100 : 0.0),
+                    String.format("%.3f", probModerate != null ? probModerate * 100 : 0.0),
+                    String.format("%.3f", probNo != null ? probNo * 100 : 0.0));
+            log.info("  Confidence: {}%", String.format("%.1f", maxProbability * 100));
+            log.info("=== End Prediction #{} ===", currentPredictionId);
 
             return new PredictionResult(
                 BigDecimal.valueOf(maxProbability),
                 riskLevel,
-                BigDecimal.valueOf(prob0 != null ? prob0 : 0.0),
-                BigDecimal.valueOf(prob1 != null ? prob1 : 0.0),
-                BigDecimal.valueOf(prob2 != null ? prob2 : 0.0)
+                BigDecimal.valueOf(probNo != null ? probNo : 0.0),
+                BigDecimal.valueOf(probModerate != null ? probModerate : 0.0),
+                BigDecimal.valueOf(probHigh != null ? probHigh : 0.0)
             );
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error during model prediction for Patient {}: {}", currentPredictionId, e.getMessage(), e);
             throw new RuntimeException("Error during model prediction", e);
         }
     }
 
     public static boolean isInitialized() {
         return initialized;
+    }
+
+    public static int getPredictionCount() {
+        return predictionCounter;
+    }
+
+    public static void resetPredictionCounter() {
+        predictionCounter = 0;
+        log.info("Prediction counter reset to 0");
     }
 
     // Input class for prediction
@@ -221,16 +257,16 @@ public class ModelRunner {
         private BigDecimal predictedProbability;
         private RiskLevel predictedRiskLevel;
         private BigDecimal lowRiskProbability;
-        private BigDecimal mediumRiskProbability;
+        private BigDecimal moderateRiskProbability;
         private BigDecimal highRiskProbability;
 
         public PredictionResult(BigDecimal predictedProbability, RiskLevel predictedRiskLevel,
-                               BigDecimal lowRiskProbability, BigDecimal mediumRiskProbability, 
+                               BigDecimal lowRiskProbability, BigDecimal moderateRiskProbability, 
                                BigDecimal highRiskProbability) {
             this.predictedProbability = predictedProbability;
             this.predictedRiskLevel = predictedRiskLevel;
             this.lowRiskProbability = lowRiskProbability;
-            this.mediumRiskProbability = mediumRiskProbability;
+            this.moderateRiskProbability = moderateRiskProbability;
             this.highRiskProbability = highRiskProbability;
         }
 
@@ -238,7 +274,7 @@ public class ModelRunner {
         public BigDecimal getPredictedProbability() { return predictedProbability; }
         public RiskLevel getPredictedRiskLevel() { return predictedRiskLevel; }
         public BigDecimal getLowRiskProbability() { return lowRiskProbability; }
-        public BigDecimal getMediumRiskProbability() { return mediumRiskProbability; }
+        public BigDecimal getModerateRiskProbability() { return moderateRiskProbability; }
         public BigDecimal getHighRiskProbability() { return highRiskProbability; }
     }
 }
