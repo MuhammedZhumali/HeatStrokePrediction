@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, getCurrentUser } from '../services/api';
+import { loginUser, registerUser, getCurrentUser, getProfileByEmail } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -26,13 +26,24 @@ export const AuthProvider = ({ children }) => {
       const response = await loginUser(credentials);
       console.log('AuthContext: Login response:', response);
       
-      // Use role from backend response
+      // Fetch full user profile to get ID and other details
+      let userProfile = null;
+      try {
+        userProfile = await getProfileByEmail(credentials.email);
+      } catch (profileError) {
+        console.warn('Could not fetch user profile:', profileError);
+      }
+      
+      // Use role from backend response and user profile
+      const roleType = userProfile?.roleType;
+      const roleString = typeof roleType === 'string' ? roleType : (roleType?.name?.() || response.user?.role || 'PATIENT');
+      
       const userData = {
-        id: 1,
-        name: response.user?.username || credentials.email,
+        id: userProfile?.id || null,
+        name: response.user?.username || userProfile?.name || credentials.email,
         email: credentials.email,
-        role: response.user?.role || 'PATIENT',
-        roleType: response.user?.role || 'PATIENT'
+        role: roleString,
+        roleType: roleString
       };
       
       console.log('AuthContext: Setting user:', userData);

@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard';
 import RiskPredictionForm from './components/RiskPredictionForm';
 import PredictionHistory from './components/PredictionHistory';
 import UserManagement from './components/admin/UserManagement';
+import Profile from './components/Profile';
 import Navigation from './components/Navigation';
 
 const AppRoutes = () => {
@@ -47,6 +48,11 @@ const AppRoutes = () => {
           <Route path="/admin/users" element={
             <ProtectedRoute requireAdmin={true}>
               <UserManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           } />
           <Route path="/login" element={<Navigate to="/" replace />} />

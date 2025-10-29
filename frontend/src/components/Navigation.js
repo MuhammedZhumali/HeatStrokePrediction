@@ -208,7 +208,10 @@ const Navigation = () => {
             horizontal: 'right',
           }}
         >
-          <MenuItem onClick={handleProfileMenuClose}>
+          <MenuItem onClick={() => {
+            navigate('/profile');
+            handleProfileMenuClose();
+          }}>
             <ListItemIcon>
               <AccountCircle fontSize="small" />
             </ListItemIcon>

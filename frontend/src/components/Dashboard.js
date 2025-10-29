@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { getRecentPredictions, getAllPredictions } from '../services/api';
+import { getRecentPredictions, getAllPredictions, getPredictionStatistics } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const StatCard = ({ title, value, icon, color, trend }) => (
@@ -46,8 +46,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   
-  const { data: recentPredictions, isLoading, error } = useQuery(
-    ['dashboardPredictions', currentUser?.roleType, currentUser?.id],
+  // Fetch recent predictions for display (limited to 5)
+  const { data: recentPredictions, isLoading: isLoadingRecent, error: recentError } = useQuery(
+    ['dashboardRecentPredictions', currentUser?.roleType, currentUser?.id],
     () => {
       // Use admin endpoint if user is admin, otherwise use user-specific endpoint
       if (currentUser?.roleType === 'ADMIN') {
@@ -62,28 +63,52 @@ const Dashboard = () => {
     }
   );
 
+  // Fetch statistics from ALL predictions for accurate counts
+  const { data: statistics, isLoading: isLoadingStats, error: statsError } = useQuery(
+    ['dashboardStatistics', currentUser?.roleType],
+    () => {
+      // Only fetch statistics for admin users (non-admin users see their own stats via getRecentPredictions)
+      if (currentUser?.roleType === 'ADMIN') {
+        return getPredictionStatistics();
+      } else {
+        // For non-admin, we'll calculate from recent predictions data
+        return null;
+      }
+    },
+    {
+      refetchInterval: 30000, // Refetch every 30 seconds
+      enabled: !!currentUser && currentUser?.roleType === 'ADMIN',
+    }
+  );
+
+  const error = recentError || statsError;
+  const isLoading = isLoadingRecent || (currentUser?.roleType === 'ADMIN' && isLoadingStats);
+
+  // Use statistics for admin, or fallback to recentPredictions for non-admin
+  const statsData = currentUser?.roleType === 'ADMIN' ? statistics : recentPredictions;
+
   const stats = [
     {
       title: 'Total Predictions',
-      value: recentPredictions?.total || 0,
+      value: statsData?.total || recentPredictions?.total || 0,
       icon: <Assessment color="primary" />,
       color: 'primary.main',
     },
     {
       title: 'High Risk Cases',
-      value: recentPredictions?.highRiskCount || recentPredictions?.highRisk || 0,
+      value: statsData?.highRiskCount || recentPredictions?.highRiskCount || recentPredictions?.highRisk || 0,
       icon: <Warning color="error" />,
       color: 'error.main',
     },
     {
       title: 'Medium Risk Cases',
-      value: recentPredictions?.mediumRiskCount || 0,
+      value: statsData?.mediumRiskCount || recentPredictions?.mediumRiskCount || 0,
       icon: <Warning color="warning" />,
       color: 'warning.main',
     },
     {
       title: 'Low Risk Cases',
-      value: recentPredictions?.lowRiskCount || recentPredictions?.lowRisk || 0,
+      value: statsData?.lowRiskCount || recentPredictions?.lowRiskCount || recentPredictions?.lowRisk || 0,
       icon: <CheckCircle color="success" />,
       color: 'success.main',
     },

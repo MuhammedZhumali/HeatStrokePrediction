@@ -109,6 +109,25 @@ export const getAllPredictions = async (page = 0, size = 10) => {
   }
 };
 
+// Get statistics for all predictions (for dashboard)
+export const getPredictionStatistics = async () => {
+  try {
+    // Fetch a large page size to get all predictions for accurate statistics
+    const response = await api.get(`/api/predictions/all?page=0&size=10000`);
+    const allPredictions = response.data.content || [];
+    
+    return {
+      total: response.data.totalElements || 0,
+      highRiskCount: allPredictions.filter(p => p.predictedRiskLevel === 'HIGH').length,
+      mediumRiskCount: allPredictions.filter(p => p.predictedRiskLevel === 'MEDIUM').length,
+      lowRiskCount: allPredictions.filter(p => p.predictedRiskLevel === 'LOW').length,
+    };
+  } catch (error) {
+    console.error('Error fetching prediction statistics:', error);
+    throw error;
+  }
+};
+
 export const deletePrediction = async (id) => {
   try {
     // Backend doesn't have delete endpoint, so we'll just return success
@@ -292,6 +311,55 @@ export const deleteUser = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting user:', error);
+    throw error;
+  }
+};
+
+// Profile endpoints - users can access and update their own profile
+export const getProfileByEmail = async (email) => {
+  try {
+    const response = await api.get(`/user/profile/${encodeURIComponent(email)}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    throw error;
+  }
+};
+
+export const getProfileById = async (id) => {
+  try {
+    const response = await api.get(`/user/profile/id/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    throw error;
+  }
+};
+
+export const updateOwnProfile = async (id, userData) => {
+  try {
+    // Calculate BMI if height and weight are provided
+    let bmi = null;
+    if (userData.height && userData.weight) {
+      const heightInMeters = userData.height / 100;
+      bmi = userData.weight / (heightInMeters * heightInMeters);
+    }
+    
+    // Transform frontend user data to match backend User model
+    const backendUserData = {
+      name: userData.name || null,
+      email: userData.email || null,
+      phoneNumber: userData.phoneNumber || null,
+      gender: userData.gender || null,
+      height: userData.height || null,
+      weight: userData.weight || null,
+      bmi: bmi,
+    };
+    
+    const response = await api.put(`/user/profile/${id}`, backendUserData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating profile:', error);
     throw error;
   }
 };

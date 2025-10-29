@@ -27,7 +27,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { format } from 'date-fns';
-import { getPredictionHistory, getAllPredictions } from '../services/api';
+import { getPredictionHistory, getAllPredictions, getPredictionStatistics } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const PredictionHistory = () => {
@@ -52,6 +52,21 @@ const PredictionHistory = () => {
       }
     },
     {
+      keepPreviousData: true,
+    }
+  );
+
+  // Fetch statistics from ALL predictions for accurate counts (admin only)
+  const { data: statistics } = useQuery(
+    ['predictionStatistics', currentUser?.roleType],
+    () => {
+      if (currentUser?.roleType === 'ADMIN') {
+        return getPredictionStatistics();
+      }
+      return null;
+    },
+    {
+      enabled: !!currentUser && currentUser?.roleType === 'ADMIN',
       keepPreviousData: true,
     }
   );
@@ -148,7 +163,7 @@ const PredictionHistory = () => {
       </Paper>
 
       {/* Statistics Cards */}
-      {historyData && (
+      {(historyData || statistics) && (
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={4}>
             <Card>
@@ -157,7 +172,7 @@ const PredictionHistory = () => {
                   High Risk
                 </Typography>
                 <Typography variant="h4" color="error.main">
-                  {historyData.highRiskCount || 0}
+                  {(currentUser?.roleType === 'ADMIN' ? statistics?.highRiskCount : historyData?.highRiskCount) || 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -169,7 +184,7 @@ const PredictionHistory = () => {
                   Medium Risk
                 </Typography>
                 <Typography variant="h4" color="warning.main">
-                  {historyData.mediumRiskCount || 0}
+                  {(currentUser?.roleType === 'ADMIN' ? statistics?.mediumRiskCount : historyData?.mediumRiskCount) || 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -181,7 +196,7 @@ const PredictionHistory = () => {
                   Low Risk
                 </Typography>
                 <Typography variant="h4" color="success.main">
-                  {historyData.lowRiskCount || 0}
+                  {(currentUser?.roleType === 'ADMIN' ? statistics?.lowRiskCount : historyData?.lowRiskCount) || 0}
                 </Typography>
               </CardContent>
             </Card>
