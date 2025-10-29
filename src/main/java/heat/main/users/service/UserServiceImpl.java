@@ -81,5 +81,58 @@ public class UserServiceImpl implements UserSerivce {
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
+    
+    @Override
+    public Optional<User> findUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+    
+    @Override
+    public Optional<User> findUserByName(String name) {
+        return userRepository.findByName(name);
+    }
+    
+    @Override
+    public User updateOwnProfile(Long id, User user) {
+        Optional<User> existingUser = userRepository.findById(id);
+        if (existingUser.isPresent()) {
+            User updatedUser = existingUser.get();
+
+            // Update only the fields that are not null
+            if (user.getName() != null) {
+                updatedUser.setName(user.getName());
+            }
+            if (user.getPhoneNumber() != null) {
+                updatedUser.setPhoneNumber(user.getPhoneNumber());
+            }
+            if (user.getEmail() != null) {
+                updatedUser.setEmail(user.getEmail());
+            }
+            if (user.getGender() != '\u0000') {
+                updatedUser.setGender(user.getGender());
+            }
+            if (user.getWeight() != null) {
+                updatedUser.setWeight(user.getWeight());
+            }
+            if (user.getHeight() != null) {
+                updatedUser.setHeight(user.getHeight());
+            }
+            
+            // Recalculate BMI when height or weight changes
+            if (user.getHeight() != null && user.getWeight() != null) {
+                java.math.BigDecimal heightInMeters = updatedUser.getHeight().divide(new java.math.BigDecimal("100"));
+                java.math.BigDecimal bmi = updatedUser.getWeight().divide(
+                    heightInMeters.multiply(heightInMeters), 
+                    2, 
+                    java.math.RoundingMode.HALF_UP
+                );
+                updatedUser.setBmi(bmi);
+            }
+
+            return userRepository.save(updatedUser);
+        } else {
+            throw new RuntimeException("User not found with id " + id);
+        }
+    }
 
 }

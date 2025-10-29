@@ -64,4 +64,20 @@ public class UserController {
     public void deleteUser(@PathVariable Long id) {
         userSerivce.deleteUser(id);
     }
+    
+    // Profile endpoints - users can access their own profile
+    @GetMapping("/profile/{email}")
+    public Optional<User> getProfileByEmail(@PathVariable String email) {
+        return userSerivce.findUserByEmail(email);
+    }
+    
+    @GetMapping("/profile/id/{id}")
+    public Optional<User> getProfileById(@PathVariable Long id) {
+        return userSerivce.findUserById(id);
+    }
+    
+    @PutMapping("/profile/{id}")
+    public User updateOwnProfile(@PathVariable Long id, @RequestBody User user) {
+        return userSerivce.updateOwnProfile(id, user);
+    }
 }

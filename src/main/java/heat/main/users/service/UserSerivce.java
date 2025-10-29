@@ -21,6 +21,12 @@ public interface UserSerivce {
     User updateUser(Long id, User user);
 
     void deleteUser(Long id);
+    
+    Optional<User> findUserByEmail(String email);
+    
+    Optional<User> findUserByName(String name);
+    
+    User updateOwnProfile(Long id, User user);
 
 }
 
