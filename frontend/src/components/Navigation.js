@@ -15,13 +15,13 @@ import {
   MenuItem,
 } from '@mui/material';
 import {
-  Dashboard,
-  Assessment,
-  History,
-  LocalHospital,
-  People,
-  Logout,
-  AccountCircle,
+    Dashboard,
+    Assessment,
+    History,
+    LocalHospital,
+    People,
+    Logout,
+    AccountCircle, Science,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,6 +44,11 @@ const Navigation = () => {
       text: 'Risk Prediction',
       icon: <Assessment />,
       path: '/predict',
+    },
+    {
+      text: 'Playground',
+      icon: <Science />,
+      path: '/playground',
     },
     {
       text: 'History',

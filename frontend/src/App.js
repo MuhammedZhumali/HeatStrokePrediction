@@ -8,6 +8,7 @@ import Register from './components/auth/Register';
 import Dashboard from './components/Dashboard';
 import RiskPredictionForm from './components/RiskPredictionForm';
 import PredictionHistory from './components/PredictionHistory';
+import LivePredictionPlayground from './components/LivePredictionPlayground';
 import UserManagement from './components/admin/UserManagement';
 import Profile from './components/Profile';
 import Navigation from './components/Navigation';
@@ -43,6 +44,11 @@ const AppRoutes = () => {
           <Route path="/history" element={
             <ProtectedRoute>
               <PredictionHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="/playground" element={
+            <ProtectedRoute>
+              <LivePredictionPlayground />
             </ProtectedRoute>
           } />
           <Route path="/admin/users" element={

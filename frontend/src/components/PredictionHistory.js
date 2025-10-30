@@ -102,6 +102,13 @@ const PredictionHistory = () => {
     setPage(0);
   };
 
+  const formatDehydration = (value) => {
+    if (value === null || value === undefined) return 'N/A';
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) return 'N/A';
+    return numeric >= 0.5 ? 'Dehydrated' : 'Not dehydrated';
+  };
+
   if (error) {
     return (
       <Box>
@@ -245,7 +252,7 @@ const PredictionHistory = () => {
                     <TableCell>{prediction.temperature}°C</TableCell>
                     <TableCell>{prediction.humidity}%</TableCell>
                     <TableCell>{prediction.pulse}</TableCell>
-                    <TableCell>{prediction.dehydrationLevel || 'N/A'}</TableCell>
+                    <TableCell>{formatDehydration(prediction.dehydrationLevel)}</TableCell>
                     <TableCell>{prediction.heatIndex || 'N/A'}</TableCell>
                     <TableCell>
                       <Chip
