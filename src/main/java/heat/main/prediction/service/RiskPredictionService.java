@@ -82,7 +82,17 @@ public class RiskPredictionService {
         
         // Get environmental and physiological factors from request
         double temperature = req.getTemperature().doubleValue();
+        // Normalize humidity: accept either [0,1] fraction or [0,100] percentage
         double humidity = req.getHumidity().doubleValue();
+        if (humidity > 1.0) {
+            humidity = humidity / 100.0;
+        }
+        // Clamp to [0,1] to avoid invalid values reaching the model
+        if (humidity < 0.0) {
+            humidity = 0.0;
+        } else if (humidity > 1.0) {
+            humidity = 1.0;
+        }
         double pulse = req.getPulse().doubleValue();
         double dehydrationLevel = req.getDehydrationLevel() != null ? req.getDehydrationLevel().doubleValue() : 0.5;
         double heatIndex = req.getHeatIndex() != null ? req.getHeatIndex().doubleValue() : temperature;
