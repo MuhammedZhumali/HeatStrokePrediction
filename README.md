@@ -25,24 +25,50 @@ model/              # PMML model copy
 - Java 17
 - Maven 3.8+
 - Node.js 18+ and npm
-- PostgreSQL (local) listening on port 5433 with database/schema/user:
-  - DB: heatstr
-  - User: heatstr / heatstr
+- Docker and Docker Compose (for database setup)
 
-You can start a local Postgres using Docker:
+## Database Setup with Docker Compose
+
+The easiest way to set up the database is using Docker Compose:
+
 ```bash
-docker run --name heatstr-db -e POSTGRES_DB=heatstr -e POSTGRES_USER=heatstr -e POSTGRES_PASSWORD=heatstr -p 5433:5432 -d postgres:14
+# Start the PostgreSQL database
+docker-compose up -d
+
+# Check if the database is running
+docker-compose ps
+
+# View database logs
+docker-compose logs db
+
+# Stop the database
+docker-compose down
+
+# Stop and remove all data (warning: deletes database)
+docker-compose down -v
 ```
 
+The database will be available at:
+- Host: `localhost`
+- Port: `5432` (when using Docker Compose)
+- Database: `heatstr`
+- User: `heatstr`
+- Password: `heatstr`
+
+**Note:** The `application.yml` file is configured to use port `5433` for local development. If you're using Docker Compose (which exposes port `5432`), you may need to update the datasource URL in `application.yml` or adjust the port mapping.
+
 ## Backend Setup (Spring Boot)
-1. Configure DB in `src/main/resources/application.yml` (defaults already set):
-   - `jdbc:postgresql://localhost:5433/heatstr`
-   - username/password: `heatstr/heatstr`
-2. (Optional) Apply Liquibase changelogs if you want automatic schema creation. In `application.yml` Liquibase is disabled by default (`liquibase.enabled: false`). To create the schema:
+1. Start the database using Docker Compose (see above) or configure your local PostgreSQL instance.
+2. Configure DB in `src/main/resources/application.yml`:
+   - Default (for Docker Compose): `jdbc:postgresql://localhost:5432/heatstr`
+   - Or (for local PostgreSQL): `jdbc:postgresql://localhost:5433/heatstr`
+   - Username/password: `heatstr/heatstr`
+3. (Optional) Apply Liquibase changelogs if you want automatic schema creation. In `application.yml` Liquibase is disabled by default (`liquibase.enabled: false`). To create the schema:
    ```bash
    mvn liquibase:update
    ```
-3. Build and run the API:
+   Or enable it in `application.yml` by setting `spring.liquibase.enabled: true` and restart the app.
+4. Build and run the API:
    ```bash
    mvn clean spring-boot:run
    # API runs at http://localhost:8080
@@ -87,9 +113,15 @@ docker run --name heatstr-db -e POSTGRES_DB=heatstr -e POSTGRES_USER=heatstr -e 
 - Edit: name, email, phone, gender, height (cm), weight (kg). BMI auto-calculates client-side and persists server-side.
 
 ## Common Troubleshooting
-- DB connection refused: ensure Docker container is up and port `5433` is free.
-- Liquibase not applying: either enable in `application.yml` or run `mvn liquibase:update`.
-- CORS/API URL issues: set `REACT_APP_API_URL` to your backend host/port.
+- **DB connection refused**: 
+  - Ensure Docker container is up: `docker-compose ps`
+  - Check if the port matches your `application.yml` configuration (5432 for Docker Compose, 5433 for local PostgreSQL)
+  - Verify database is healthy: `docker-compose logs db`
+- **Docker permission denied**: 
+  - Add your user to the docker group: `sudo usermod -aG docker $USER`
+  - Log out and log back in (or run `newgrp docker`)
+- **Liquibase not applying**: either enable in `application.yml` (`spring.liquibase.enabled: true`) or run `mvn liquibase:update`.
+- **CORS/API URL issues**: set `REACT_APP_API_URL` environment variable in `frontend/.env` to your backend host/port.
 
 ## Building Artifacts
 ```bash
