@@ -7,14 +7,24 @@ services:
       POSTGRES_USER: heatstr
       POSTGRES_PASSWORD: heatstr
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - "5433:5432"           # проброс на хост, опционально
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U heatstr"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U heatstr -d heatstr"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-volumes:
-  postgres_data:
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/heatstr
+      SPRING_DATASOURCE_USERNAME: heatstr
+      SPRING_DATASOURCE_PASSWORD: heatstr
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_LIQUIBASE_ENABLED: "true"
+      SPRING_PROFILES_ACTIVE: compose
+    ports:
+      - "8080:8080"

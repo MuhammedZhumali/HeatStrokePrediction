@@ -1,18 +1,23 @@
 spring:
+  application:
+    name: HeatStroke
+
   datasource:
     url: jdbc:postgresql://localhost:5433/heatstr
     username: heatstr
     password: heatstr
     driver-class-name: org.postgresql.Driver
+
+  # ↓↓↓ ТОЛЬКО на первый запуск, чтобы Hibernate создал таблицы ↓↓↓
   liquibase:
     enabled: false
-    change-log: classpath:db/db.changelog-master.xml
+    change-log: classpath:db/changelog/db.changelog-master.yaml
     default-schema: heatstr
+
   jpa:
-      properties:
-        hibernate.default_schema: heatstr
-  security:
-    user:
-      name: admin
-      password: admin
-      roles: ADMIN
+    hibernate:
+      ddl-auto: validate          # ← временно
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQL10Dialect
+        default_schema: heatstr
