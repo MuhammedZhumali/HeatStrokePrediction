@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16
+    container_name: heatstroke-db
+    environment:
+      POSTGRES_DB: heatstr
+      POSTGRES_USER: heatstr
+      POSTGRES_PASSWORD: heatstr
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heatstr"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
