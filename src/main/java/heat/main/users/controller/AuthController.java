@@ -3,16 +3,13 @@ package heat.main.users.controller;
 import heat.main.domain.User;
 import heat.main.enums.RoleType;
 import heat.main.users.dto.AuthUserDto;
-import heat.main.users.service.UserSerivce;
+import heat.main.users.service.UserSerivce; // да, именно Serivce (как у тебя в проекте)
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
-import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/auth")
@@ -24,39 +21,24 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthUserDto> login(@RequestBody AuthUserDto authUserDto) {
+    public ResponseEntity<AuthUserDto> login(@RequestBody AuthUserDto dto) {
         try {
-            Optional<User> userOptional = userService.getAllUsers().stream()
-                    .filter(user -> user.getName().equals(authUserDto.getUsername()) || 
-                                   user.getEmail().equals(authUserDto.getUsername()))
-                    .findFirst();
-
-            if (!userOptional.isPresent()) {
+            var userOpt = userService.findByNameOrEmail(dto.getUsername());
+            if (userOpt.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
-            User user = userOptional.get();
-
-            // Check if password is properly BCrypt encoded
-            if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-                log.warn("User {} has null or empty password", user.getName());
+            var user = userOpt.get();
+            if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
-            // Check if password is BCrypt encoded (starts with $2a$)
-            if (!user.getPassword().startsWith("$2a$")) {
-                log.warn("User {} has password that is not BCrypt encoded", user.getName());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
+            var resp = new AuthUserDto();
+            resp.setUsername(user.getName());
+            resp.setEmail(user.getEmail());
+            resp.setRole(user.getRoleType().name());
+            return ResponseEntity.ok(resp);
 
-            if (passwordEncoder.matches(authUserDto.getPassword(), user.getPassword())) {
-                AuthUserDto responseDto = new AuthUserDto();
-                responseDto.setUsername(user.getName());
-                responseDto.setRole(user.getRoleType().name());
-                return ResponseEntity.ok(responseDto);
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
         } catch (Exception e) {
             log.error("Error during login", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -64,75 +46,46 @@ public class AuthController {
     }
 
     @PostMapping("/sign_up")
-    public ResponseEntity<AuthUserDto> signUp(@RequestBody AuthUserDto authUserDto) {
+    public ResponseEntity<?> signUp(@RequestBody AuthUserDto dto) {
         try {
-            if (authUserDto.getUsername() == null || authUserDto.getUsername().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            // простые проверки
+            if (isBlank(dto.getUsername()) || isBlank(dto.getPassword()) || isBlank(dto.getEmail())) {
+                return ResponseEntity.badRequest().body("username, password, email are required");
             }
-            if (authUserDto.getPassword() == null || authUserDto.getPassword().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            if (authUserDto.getEmail() == null || authUserDto.getEmail().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            if (authUserDto.getGender() == ' ') {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            if (authUserDto.getHeight() == null || authUserDto.getHeight().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
-            if (authUserDto.getWeight() == null || authUserDto.getWeight().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
+            // gender/height/weight — опционально, если у тебя это обязательно, раскомментируй
+            // if (dto.getGender() == '\u0000') return ResponseEntity.badRequest().body("gender is required");
+            // if (dto.getHeight() == null || dto.getHeight().signum() <= 0) return ResponseEntity.badRequest().body("height must be > 0");
+            // if (dto.getWeight() == null || dto.getWeight().signum() <= 0) return ResponseEntity.badRequest().body("weight must be > 0");
 
-            if (authUserDto.getUsername().contains("\u0000")) {
-                log.warn("Username contains null byte, sanitizing: {}", authUserDto.getUsername());
-            }
-            if (authUserDto.getEmail().contains("\u0000")) {
-                log.warn("Email contains null byte, sanitizing: {}", authUserDto.getEmail());
-            }
-
-            boolean userExists = userService.getAllUsers().stream()
-                    .anyMatch(user -> user.getName().equals(authUserDto.getUsername()));
-
-            if (userExists) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
-            }
-
-            String hashedPassword = passwordEncoder.encode(authUserDto.getPassword());
-
-            String sanitizedUsername = authUserDto.getUsername().replaceAll("\u0000", "");
-            String sanitizedEmail = authUserDto.getEmail().replaceAll("\u0000", "");
-            
-            // Calculate BMI: weight(kg) / height(m)²
-            // Height is in cm, so we convert to meters by dividing by 100
-            BigDecimal heightInMeters = authUserDto.getHeight().divide(new java.math.BigDecimal("100"));
-            BigDecimal bmi = authUserDto.getWeight().divide(heightInMeters.multiply(heightInMeters), 2, java.math.RoundingMode.HALF_UP);
-            
-            log.info("Creating user with data: username={}, email={}, gender={}, height={}, weight={}, bmi={}", 
-                    sanitizedUsername, sanitizedEmail, authUserDto.getGender(), 
-                    authUserDto.getHeight(), authUserDto.getWeight(), bmi);
-
-            User newUser = User.builder()
-                    .name(sanitizedUsername)
-                    .password(hashedPassword)
-                    .roleType(RoleType.PATIENT) // Default role
-                    .email(sanitizedEmail)
-                    .gender(authUserDto.getGender())
-                    .height(authUserDto.getHeight())
-                    .weight(authUserDto.getWeight())
-                    .bmi(bmi)
+            // создаём пользователя — пароль передаём СЫРОЙ, сервис сам его захеширует
+            var newUser = User.builder()
+                    .name(dto.getUsername().trim())
+                    .password(dto.getPassword()) // raw; в сервисе зашифруется BCrypt'ом
+                    .email(dto.getEmail().trim())
+                    .gender(dto.getGender())
+                    .height(dto.getHeight())
+                    .weight(dto.getWeight())
+                    .roleType(RoleType.PATIENT) // роль по умолчанию
                     .build();
 
-            User savedUser = userService.addUser(newUser);
+            var saved = userService.addUser(newUser);
 
-            AuthUserDto responseDto = new AuthUserDto();
-            responseDto.setUsername(savedUser.getName());
-            return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+            var resp = new AuthUserDto();
+            resp.setUsername(saved.getName());
+            resp.setEmail(saved.getEmail());
+            resp.setRole(saved.getRoleType().name());
+            return ResponseEntity.status(HttpStatus.CREATED).body(resp);
 
+        } catch (IllegalArgumentException dup) {
+            // из сервиса могут прилетать ошибки "email/username already in use"
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(dup.getMessage());
         } catch (Exception e) {
             log.error("Error during sign up", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 }

@@ -66,9 +66,10 @@ public class UserController {
     }
     
     // Profile endpoints - users can access their own profile
-    @GetMapping("/profile/{email}")
+    @GetMapping("/profile/email/{email:.+}")
     public Optional<User> getProfileByEmail(@PathVariable String email) {
-        return userSerivce.findUserByEmail(email);
+        String decoded = java.net.URLDecoder.decode(email, java.nio.charset.StandardCharsets.UTF_8);
+        return userSerivce.findUserByEmail(decoded);
     }
     
     @GetMapping("/profile/id/{id}")
