@@ -16,7 +16,7 @@ public interface UserSerivce {
     void deleteUser(Long id);
 
     Optional<User> findUserByEmail(String email);
-//    Optional<User> findUserByName(String name);
+    Optional<User> findUserByName(String name);
 
     // новый метод
     Optional<User> findByNameOrEmail(String value);
