@@ -2,22 +2,44 @@ spring:
   application:
     name: HeatStroke
 
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: heatstr
+
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.yml   # слеш в начале ок
+    liquibase-schema: public      # таблицы DATABASECHANGELOG* в public
+    default-schema: heatstr       # бизнес-таблицы в heatstr
+
+  sql:
+    init:
+      mode: never
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
   datasource:
-    url: jdbc:postgresql://localhost:5433/heatstr
+    url: jdbc:postgresql://localhost:5433/heatstr?currentSchema=heatstr
     username: heatstr
     password: heatstr
     driver-class-name: org.postgresql.Driver
-
-  # ↓↓↓ ТОЛЬКО на первый запуск, чтобы Hibernate создал таблицы ↓↓↓
-  liquibase:
-    enabled: false
-    change-log: classpath:db/changelog/db.changelog-master.yaml
-    default-schema: heatstr
-
   jpa:
-    hibernate:
-      ddl-auto: validate          # ← временно
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQL10Dialect
-        default_schema: heatstr
+    show-sql: true
+  thymeleaf:
+    check-template-location: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: compose
+  datasource:
+    url: jdbc:postgresql://db:5432/heatstr?currentSchema=heatstr
+    username: heatstr
+    password: heatstr
+    driver-class-name: org.postgresql.Driver

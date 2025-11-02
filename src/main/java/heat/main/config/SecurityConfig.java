@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.http.HttpMethod;
@@ -27,16 +28,19 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf().disable()
-                .cors().configurationSource(corsConfigurationSource())
-                .and()
+                .cors().configurationSource(corsConfigurationSource()).and()
                 .authorizeRequests()
-                .antMatchers("/auth/**").permitAll()
+                .antMatchers("/auth/**", "/css/**", "/js/**").permitAll()
+                .antMatchers(HttpMethod.GET,  "/api/predictions/**").permitAll()
                 .antMatchers("/user/**").hasRole("ADMIN")
-                .antMatchers(HttpMethod.GET, "/api/predictions/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/predictions/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
                 .and()
-                .httpBasic()
+                .formLogin()
+                .defaultSuccessUrl("/", true)   // при желании поменяй на нужный путь
+                .permitAll()
+                .and()
+                .logout().permitAll()
                 .and()
                 .userDetailsService(userDetailsService)
                 .headers().frameOptions().disable();
@@ -45,8 +49,9 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); // поддержка {noop},{bcrypt},...
     }
+
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -82,5 +87,6 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+
     }
 }

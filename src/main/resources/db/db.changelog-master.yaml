@@ -1,7 +1,0 @@
-databaseChangeLog:
-  - changeSet:
-      id: baseline-2025-11-01
-      author: aibar
-      changes:
-        - tagDatabase:
-            tag: baseline-2025-11-01

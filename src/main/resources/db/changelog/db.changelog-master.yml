@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - include:
+      file: changesets/0001-create-schema-heatstr.xml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changesets/user-table.xml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changesets/prediction-table.xml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changesets/password-column.xml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changesets/add-bmi.xml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changesets/0100-admin-user.xml
+      relativeToChangelogFile: true

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="0100-admin-user" author="aibar" context="dev,compose">
+        <preConditions onFail="MARK_RAN" onError="HALT">
+            <not>
+                <tableExists tableName="core_user" schemaName="heatstr"/>
+            </not>
+        </preConditions>
+        <!-- если таблицы вдруг ещё нет, просто помечаем как выполнено -->
+        <comment>Seed admin user</comment>
+        <insert tableName="core_user" schemaName="heatstr">
+            <column name="user_name"     value="admin"/>
+            <column name="phone_number"  value="0000000000"/>
+            <column name="email"         value="admin@local"/>
+            <column name="gender"        value="M"/>
+            <column name="height"        valueNumeric="170"/>
+            <column name="weight"        valueNumeric="70"/>
+            <column name="bmi"           valueNumeric="24.2"/>
+            <column name="role"          value="ADMIN"/>
+            <!-- bcrypt('admin') -->
+            <column name="password"      value="$2a$10$7I1S7wB6Kk4TjvYF2vV4aO3n3plu9M2Q1Qx1hS0C2a7xkq3I8nY8y"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
